@@ -12,6 +12,9 @@ import {
   Trash2,
   Upload,
   Wand2,
+  Link as LinkIcon,
+  MessageSquare,
+  FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "./lib/supabase";
@@ -49,7 +52,7 @@ function seedState() {
   };
 }
 
-export default function CreatorContentOS() {
+export default function DeeperHealingContentCalendar() {
   const [db, setDB] = useState(seedState());
   const [view, setView] = useState("calendar");
   const [search, setSearch] = useState("");
@@ -124,7 +127,9 @@ export default function CreatorContentOS() {
           (post.title || "").toLowerCase().includes(query) ||
           (post.platform || "").toLowerCase().includes(query) ||
           (post.status || "").toLowerCase().includes(query) ||
-          (post.caption || "").toLowerCase().includes(query)
+          (post.caption || "").toLowerCase().includes(query) ||
+          (post.notes || "").toLowerCase().includes(query) ||
+          (post.feedback || "").toLowerCase().includes(query)
         );
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -192,6 +197,9 @@ export default function CreatorContentOS() {
       platform: idea.platform || "Instagram",
       status: "Draft",
       caption: idea.notes || "",
+      notes: "",
+      video_link: "",
+      feedback: "",
       updated_at: new Date().toISOString(),
     };
 
@@ -225,6 +233,9 @@ export default function CreatorContentOS() {
       platform: post.platform,
       status: post.status || "Draft",
       caption: post.caption || "",
+      notes: post.notes || "",
+      video_link: post.video_link || "",
+      feedback: post.feedback || "",
       updated_at: new Date().toISOString(),
     };
 
@@ -236,7 +247,11 @@ export default function CreatorContentOS() {
     }
 
     if (data?.[0]) {
-      await addNotification(`${data[0].title} was added to your calendar.`, "success", data[0].id);
+      await addNotification(
+        `${data[0].title} was added to your calendar.`,
+        "success",
+        data[0].id
+      );
     }
   }
 
@@ -307,14 +322,13 @@ export default function CreatorContentOS() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-200">
-                <Sparkles className="h-3.5 w-3.5" /> Creator planning system
+                <Sparkles className="h-3.5 w-3.5" /> Deeper Healing Content Workflow
               </div>
               <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
-                Creator Content OS
+                Deeper Healing Content Calendar
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
-                A polished space to capture ideas, plan content, store reusable copy, and keep your
-                posting rhythm clear.
+                A polished space to plan content, organize approvals, store reusable copy, and keep your marketing workflow clear.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -369,7 +383,7 @@ export default function CreatorContentOS() {
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search posts, captions, platform"
+                  placeholder="Search posts, captions, notes"
                   className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none transition focus:border-slate-300 focus:bg-white"
                 />
               </div>
@@ -590,7 +604,7 @@ function PostRow({ post, deletePost, updateStatus }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
+        <div className="w-full">
           <div className="flex flex-wrap items-center gap-2">
             <h4 className="font-semibold text-slate-900">{post.title}</h4>
             <span
@@ -609,7 +623,37 @@ function PostRow({ post, deletePost, updateStatus }) {
               {post.platform}
             </span>
           </div>
-          {post.caption && <p className="mt-2 text-sm leading-6 text-slate-600">{post.caption}</p>}
+
+          <div className="mt-4 space-y-3">
+            {post.notes && (
+              <DetailBlock icon={FileText} label="Notes" value={post.notes} />
+            )}
+
+            {post.video_link && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                <div className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-800">
+                  <LinkIcon className="h-4 w-4" />
+                  Video Link
+                </div>
+                <a
+                  href={post.video_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-all text-sm text-blue-700 underline"
+                >
+                  {post.video_link}
+                </a>
+              </div>
+            )}
+
+            {post.caption && (
+              <DetailBlock icon={FileText} label="Caption for Approval" value={post.caption} />
+            )}
+
+            {post.feedback && (
+              <DetailBlock icon={MessageSquare} label="Feedback / Revisions" value={post.feedback} />
+            )}
+          </div>
         </div>
 
         <button
@@ -639,6 +683,18 @@ function PostRow({ post, deletePost, updateStatus }) {
   );
 }
 
+function DetailBlock({ icon: Icon, label, value }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3">
+      <div className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-800">
+        <Icon className="h-4 w-4" />
+        {label}
+      </div>
+      <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600">{value}</p>
+    </div>
+  );
+}
+
 function IdeasView({ ideas, addIdea, convertIdea }) {
   const [text, setText] = useState("");
 
@@ -650,7 +706,7 @@ function IdeasView({ ideas, addIdea, convertIdea }) {
         </p>
         <h2 className="mt-1 text-2xl font-semibold">Capture ideas quickly</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          Drop ideas here before they disappear. Turn any one of them into a post when you’re ready.
+          Drop ideas here before they disappear. Turn any one of them into a scheduled post when you’re ready.
         </p>
 
         <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -821,6 +877,10 @@ function QuickAdd({ addPost }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [platform, setPlatform] = useState("Instagram");
+  const [notes, setNotes] = useState("");
+  const [videoLink, setVideoLink] = useState("");
+  const [caption, setCaption] = useState("");
+  const [feedback, setFeedback] = useState("");
 
   return (
     <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -830,6 +890,7 @@ function QuickAdd({ addPost }) {
         placeholder="Post title"
         className="mb-3 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-slate-300"
       />
+
       <div className="grid grid-cols-2 gap-3">
         <input
           type="date"
@@ -849,6 +910,35 @@ function QuickAdd({ addPost }) {
           ))}
         </select>
       </div>
+
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes"
+        className="mt-3 min-h-[90px] w-full resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm outline-none transition focus:border-slate-300"
+      />
+
+      <input
+        value={videoLink}
+        onChange={(e) => setVideoLink(e.target.value)}
+        placeholder="Video link"
+        className="mt-3 h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-slate-300"
+      />
+
+      <textarea
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+        placeholder="Caption for approval"
+        className="mt-3 min-h-[120px] w-full resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm outline-none transition focus:border-slate-300"
+      />
+
+      <textarea
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+        placeholder="Feedback / revisions"
+        className="mt-3 min-h-[100px] w-full resize-none rounded-2xl border border-slate-200 bg-white p-4 text-sm outline-none transition focus:border-slate-300"
+      />
+
       <button
         onClick={() => {
           if (!title.trim()) return;
@@ -857,9 +947,16 @@ function QuickAdd({ addPost }) {
             date,
             platform,
             status: "Draft",
-            caption: "",
+            caption,
+            notes,
+            video_link: videoLink,
+            feedback,
           });
           setTitle("");
+          setNotes("");
+          setVideoLink("");
+          setCaption("");
+          setFeedback("");
         }}
         className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
       >
@@ -876,9 +973,7 @@ function CalendarHeader({ selectedDate, setSelectedDate }) {
     <div className="flex items-center gap-2">
       <button
         onClick={() =>
-          setSelectedDate(
-            new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1)
-          )
+          setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))
         }
         className="rounded-2xl border border-slate-200 bg-white p-2.5 text-slate-700 transition hover:bg-slate-50"
       >
@@ -891,9 +986,7 @@ function CalendarHeader({ selectedDate, setSelectedDate }) {
 
       <button
         onClick={() =>
-          setSelectedDate(
-            new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1)
-          )
+          setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))
         }
         className="rounded-2xl border border-slate-200 bg-white p-2.5 text-slate-700 transition hover:bg-slate-50"
       >
