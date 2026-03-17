@@ -52,6 +52,27 @@ function seedState() {
   };
 }
 
+function normalizeUrl(value) {
+  if (!value || typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const withProtocol =
+    trimmed.startsWith("http://") || trimmed.startsWith("https://")
+      ? trimmed
+      : `https://${trimmed}`;
+
+  try {
+    const parsed = new URL(withProtocol);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 export default function DeeperHealingContentCalendar() {
   const [db, setDB] = useState(seedState());
   const [view, setView] = useState("calendar");
@@ -234,7 +255,7 @@ export default function DeeperHealingContentCalendar() {
       status: post.status || "Draft",
       caption: post.caption || "",
       notes: post.notes || "",
-      video_link: post.video_link || "",
+      video_link: normalizeUrl(post.video_link || ""),
       feedback: post.feedback || "",
       updated_at: new Date().toISOString(),
     };
@@ -601,6 +622,8 @@ function CalendarView({
 }
 
 function PostRow({ post, deletePost, updateStatus }) {
+  const safeVideoUrl = normalizeUrl(post.video_link);
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -625,9 +648,7 @@ function PostRow({ post, deletePost, updateStatus }) {
           </div>
 
           <div className="mt-4 space-y-3">
-            {post.notes && (
-              <DetailBlock icon={FileText} label="Notes" value={post.notes} />
-            )}
+            {post.notes && <DetailBlock icon={FileText} label="Notes" value={post.notes} />}
 
             {post.video_link && (
               <div className="rounded-2xl border border-slate-200 bg-white p-3">
@@ -635,14 +656,21 @@ function PostRow({ post, deletePost, updateStatus }) {
                   <LinkIcon className="h-4 w-4" />
                   Video Link
                 </div>
-                <a
-                  href={post.video_link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="break-all text-sm text-blue-700 underline"
-                >
-                  {post.video_link}
-                </a>
+
+                {safeVideoUrl ? (
+                  <a
+                    href={safeVideoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all text-sm text-blue-700 underline"
+                  >
+                    {post.video_link}
+                  </a>
+                ) : (
+                  <p className="break-all text-sm text-slate-500">
+                    {post.video_link}
+                  </p>
+                )}
               </div>
             )}
 
