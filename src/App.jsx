@@ -1,3 +1,5 @@
+
+import { supabase } from "./lib/supabase";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Bell,
@@ -17,7 +19,7 @@ import {
   FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "./lib/supabase";
+import { supabase, supabaseConfigError } from "./lib/supabase";
 
 const VIEW_OPTIONS = [
   { id: "calendar", label: "Calendar", icon: Calendar },
@@ -80,70 +82,102 @@ export default function DeeperHealingContentCalendar() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [appError, setAppError] = useState("");
 
   useEffect(() => {
-    fetchAllData(true);
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
 
-    const channel = supabase
-      .channel("shared-content-updates")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "posts" },
-        () => fetchAllData(false)
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "ideas" },
-        () => fetchAllData(false)
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "vault" },
-        () => fetchAllData(false)
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications" },
-        () => fetchAllData(false)
-      )
-      .subscribe((status) => {
-        console.log("Realtime status:", status);
-      });
+    let isMounted = true;
+    let channel;
+
+    async function init() {
+      try {
+        await fetchAllData(true);
+
+        channel = supabase
+          .channel("shared-content-updates")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "posts" },
+            () => fetchAllData(false)
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "ideas" },
+            () => fetchAllData(false)
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "vault" },
+            () => fetchAllData(false)
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "notifications" },
+            () => fetchAllData(false)
+          )
+          .subscribe((status) => {
+            console.log("Realtime status:", status);
+          });
+      } catch (error) {
+        console.error("Initialization error:", error);
+        if (isMounted) {
+          setAppError("There was a problem connecting to Supabase.");
+          setLoading(false);
+        }
+      }
+    }
+
+    init();
 
     return () => {
-      supabase.removeChannel(channel);
+      isMounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 
   async function fetchAllData(showLoader = false) {
+    if (!supabase) return;
     if (showLoader) setLoading(true);
+    setAppError("");
 
-    const [postsRes, ideasRes, vaultRes, notificationsRes] = await Promise.all([
-      supabase.from("posts").select("*").order("date", { ascending: true }),
-      supabase.from("ideas").select("*").order("created_at", { ascending: false }),
-      supabase.from("vault").select("*").order("created_at", { ascending: false }),
-      supabase.from("notifications").select("*").order("created_at", { ascending: false }),
-    ]);
+    try {
+      const [postsRes, ideasRes, vaultRes, notificationsRes] = await Promise.all([
+        supabase.from("posts").select("*").order("date", { ascending: true }),
+        supabase.from("ideas").select("*").order("created_at", { ascending: false }),
+        supabase.from("vault").select("*").order("created_at", { ascending: false }),
+        supabase.from("notifications").select("*").order("created_at", { ascending: false }),
+      ]);
 
-    if (postsRes.error) console.error("Posts error:", postsRes.error);
-    if (ideasRes.error) console.error("Ideas error:", ideasRes.error);
-    if (vaultRes.error) console.error("Vault error:", vaultRes.error);
-    if (notificationsRes.error) console.error("Notifications error:", notificationsRes.error);
+      if (postsRes.error) throw postsRes.error;
+      if (ideasRes.error) throw ideasRes.error;
+      if (vaultRes.error) throw vaultRes.error;
+      if (notificationsRes.error) throw notificationsRes.error;
 
-    setDB({
-      posts: postsRes.data || [],
-      ideas: ideasRes.data || [],
-      vault: vaultRes.data || [],
-      notifications: notificationsRes.data || [],
-    });
-
-    if (showLoader) setLoading(false);
+      setDB({
+        posts: postsRes.data || [],
+        ideas: ideasRes.data || [],
+        vault: vaultRes.data || [],
+        notifications: notificationsRes.data || [],
+      });
+    } catch (error) {
+      console.error("Fetch data error:", error);
+      setAppError(error.message || "Unable to load your data.");
+    } finally {
+      if (showLoader) setLoading(false);
+    }
   }
 
   const filteredPosts = useMemo(() => {
+    const query = search.toLowerCase();
+
     return [...db.posts]
       .filter((post) => {
-        const query = search.toLowerCase();
         return (
           (post.title || "").toLowerCase().includes(query) ||
           (post.platform || "").toLowerCase().includes(query) ||
@@ -162,14 +196,14 @@ export default function DeeperHealingContentCalendar() {
   }, [filteredPosts]);
 
   const postsThisWeek = useMemo(() => {
-    const today = new Date();
-    const end = new Date();
-    end.setDate(today.getDate() + 7);
+    const today = stripTime(new Date());
+    const end = stripTime(new Date());
+    end.setDate(end.getDate() + 7);
 
     return db.posts.filter((post) => {
       if (!post.date) return false;
       const date = new Date(`${post.date}T00:00:00`);
-      return date >= stripTime(today) && date <= stripTime(end);
+      return date >= today && date <= end;
     }).length;
   }, [db.posts]);
 
@@ -178,6 +212,8 @@ export default function DeeperHealingContentCalendar() {
   }, [selectedDate, db.posts]);
 
   async function addNotification(message, type = "info", relatedPostId = null) {
+    if (!supabase) return;
+
     const { error } = await supabase.from("notifications").insert([
       {
         message,
@@ -194,7 +230,7 @@ export default function DeeperHealingContentCalendar() {
   }
 
   async function addIdea(text) {
-    if (!text.trim()) return;
+    if (!supabase || !text.trim()) return;
 
     const payload = {
       title: text.trim(),
@@ -208,10 +244,16 @@ export default function DeeperHealingContentCalendar() {
 
     if (error) {
       console.error("Idea insert error:", error);
+      setAppError(error.message || "Could not add idea.");
+      return;
     }
+
+    await fetchAllData(false);
   }
 
   async function convertIdeaToPost(idea) {
+    if (!supabase) return;
+
     const postPayload = {
       title: idea.title || "Untitled Idea",
       date: new Date().toISOString().slice(0, 10),
@@ -231,6 +273,7 @@ export default function DeeperHealingContentCalendar() {
 
     if (insertError) {
       console.error("Convert idea insert error:", insertError);
+      setAppError(insertError.message || "Could not convert idea.");
       return;
     }
 
@@ -238,6 +281,8 @@ export default function DeeperHealingContentCalendar() {
 
     if (deleteError) {
       console.error("Idea delete error:", deleteError);
+      setAppError(deleteError.message || "Post was created, but idea deletion failed.");
+      return;
     }
 
     await addNotification(
@@ -245,9 +290,13 @@ export default function DeeperHealingContentCalendar() {
       "success",
       insertedPost?.[0]?.id ?? null
     );
+
+    await fetchAllData(false);
   }
 
   async function addPost(post) {
+    if (!supabase) return;
+
     const payload = {
       title: post.title,
       date: post.date,
@@ -264,6 +313,7 @@ export default function DeeperHealingContentCalendar() {
 
     if (error) {
       console.error("Post insert error:", error);
+      setAppError(error.message || "Could not add post.");
       return;
     }
 
@@ -274,24 +324,33 @@ export default function DeeperHealingContentCalendar() {
         data[0].id
       );
     }
+
+    await fetchAllData(false);
   }
 
   async function deletePost(id) {
+    if (!supabase) return;
+
     const post = db.posts.find((item) => item.id === id);
 
     const { error } = await supabase.from("posts").delete().eq("id", id);
 
     if (error) {
       console.error("Post delete error:", error);
+      setAppError(error.message || "Could not delete post.");
       return;
     }
 
     if (post) {
       await addNotification(`${post.title} was deleted.`, "warning", id);
     }
+
+    await fetchAllData(false);
   }
 
   async function updateStatus(id, status) {
+    if (!supabase) return;
+
     const { data, error } = await supabase
       .from("posts")
       .update({
@@ -303,6 +362,7 @@ export default function DeeperHealingContentCalendar() {
 
     if (error) {
       console.error("Post update error:", error);
+      setAppError(error.message || "Could not update post status.");
       return;
     }
 
@@ -311,10 +371,12 @@ export default function DeeperHealingContentCalendar() {
     if (updatedPost) {
       await addNotification(`${updatedPost.title} was moved to ${status}.`, "info", updatedPost.id);
     }
+
+    await fetchAllData(false);
   }
 
   async function addVaultItem(text) {
-    if (!text.trim()) return;
+    if (!supabase || !text.trim()) return;
 
     const payload = {
       title: "Saved Content",
@@ -329,9 +391,133 @@ export default function DeeperHealingContentCalendar() {
 
     if (error) {
       console.error("Vault insert error:", error);
+      setAppError(error.message || "Could not save vault item.");
+      return;
     }
+
+    await fetchAllData(false);
   }
 
+  if (supabaseConfigError) {
+    return (
+      <AppShell>
+        <CardShell>
+          <h2 className="text-2xl font-semibold text-slate-900">Supabase setup needed</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">{supabaseConfigError}</p>
+          <div className="mt-4 rounded-2xl bg-slate-100 p-4 text-sm text-slate-700">
+            Add these in Vercel Project Settings → Environment Variables:
+            <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-white p-3 text-xs text-slate-800">
+{`VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key`}
+            </pre>
+          </div>
+        </CardShell>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell>
+      {appError && (
+        <CardShell className="mb-6 border border-rose-200 bg-rose-50">
+          <p className="text-sm font-medium text-rose-800">{appError}</p>
+        </CardShell>
+      )}
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[260px_1fr]">
+        <aside className="space-y-5">
+          <CardShell>
+            <div className="space-y-2">
+              {VIEW_OPTIONS.map((item) => (
+                <NavButton
+                  key={item.id}
+                  active={view === item.id}
+                  onClick={() => setView(item.id)}
+                  icon={item.icon}
+                >
+                  {item.label}
+                </NavButton>
+              ))}
+            </div>
+          </CardShell>
+
+          <CardShell>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Quick capture
+                </p>
+                <h3 className="mt-1 text-lg font-semibold">Fast add</h3>
+              </div>
+              <button
+                onClick={() => setShowQuickAdd((value) => !value)}
+                className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+              >
+                <Plus className="mr-1 inline h-4 w-4" /> New
+              </button>
+            </div>
+            {showQuickAdd && <QuickAdd addPost={addPost} />}
+          </CardShell>
+
+          <CardShell>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Search
+            </p>
+            <div className="relative mt-3">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search posts, captions, notes"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none transition focus:border-slate-300 focus:bg-white"
+              />
+            </div>
+          </CardShell>
+        </aside>
+
+        <main className="space-y-6">
+          {loading ? (
+            <CardShell>
+              <p className="text-sm text-slate-500">Loading data from Supabase...</p>
+            </CardShell>
+          ) : (
+            <>
+              {view === "calendar" && (
+                <CalendarView
+                  posts={db.posts}
+                  upcoming={upcoming}
+                  deletePost={deletePost}
+                  updateStatus={updateStatus}
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+                  monthGrid={monthGrid}
+                />
+              )}
+
+              {view === "ideas" && (
+                <IdeasView
+                  ideas={db.ideas}
+                  addIdea={addIdea}
+                  convertIdea={convertIdeaToPost}
+                />
+              )}
+
+              {view === "vault" && (
+                <VaultView vault={db.vault} addVaultItem={addVaultItem} />
+              )}
+
+              {view === "notifications" && (
+                <NotificationsView notifications={db.notifications} />
+              )}
+            </>
+          )}
+        </main>
+      </div>
+    </AppShell>
+  );
+}
+
+function AppShell({ children }) {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#ffffff,_#f8fafc_38%,_#e2e8f0_100%)] text-slate-900">
       <div className="mx-auto max-w-[1440px] p-4 md:p-6">
@@ -349,106 +535,14 @@ export default function DeeperHealingContentCalendar() {
                 Deeper Healing Content Calendar
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300 md:text-base">
-                A polished space to plan content, organize approvals, store reusable copy, and keep your marketing workflow clear.
+                A polished space to plan content, organize approvals, store reusable copy, and keep
+                your marketing workflow clear.
               </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <HeroMetric label="Upcoming" value={upcoming.length} />
-              <HeroMetric label="This Week" value={postsThisWeek} />
-              <HeroMetric label="Vault Items" value={db.vault.length} />
             </div>
           </div>
         </motion.div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[260px_1fr]">
-          <aside className="space-y-5">
-            <CardShell>
-              <div className="space-y-2">
-                {VIEW_OPTIONS.map((item) => (
-                  <NavButton
-                    key={item.id}
-                    active={view === item.id}
-                    onClick={() => setView(item.id)}
-                    icon={item.icon}
-                  >
-                    {item.label}
-                  </NavButton>
-                ))}
-              </div>
-            </CardShell>
-
-            <CardShell>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Quick capture
-                  </p>
-                  <h3 className="mt-1 text-lg font-semibold">Fast add</h3>
-                </div>
-                <button
-                  onClick={() => setShowQuickAdd((value) => !value)}
-                  className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                >
-                  <Plus className="mr-1 inline h-4 w-4" /> New
-                </button>
-              </div>
-              {showQuickAdd && <QuickAdd addPost={addPost} />}
-            </CardShell>
-
-            <CardShell>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Search
-              </p>
-              <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search posts, captions, notes"
-                  className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none transition focus:border-slate-300 focus:bg-white"
-                />
-              </div>
-            </CardShell>
-          </aside>
-
-          <main className="space-y-6">
-            {loading ? (
-              <CardShell>
-                <p className="text-sm text-slate-500">Loading data from Supabase...</p>
-              </CardShell>
-            ) : (
-              <>
-                {view === "calendar" && (
-                  <CalendarView
-                    posts={db.posts}
-                    upcoming={upcoming}
-                    deletePost={deletePost}
-                    updateStatus={updateStatus}
-                    selectedDate={selectedDate}
-                    setSelectedDate={setSelectedDate}
-                    monthGrid={monthGrid}
-                  />
-                )}
-
-                {view === "ideas" && (
-                  <IdeasView
-                    ideas={db.ideas}
-                    addIdea={addIdea}
-                    convertIdea={convertIdeaToPost}
-                  />
-                )}
-
-                {view === "vault" && (
-                  <VaultView vault={db.vault} addVaultItem={addVaultItem} />
-                )}
-
-                {view === "notifications" && (
-                  <NotificationsView notifications={db.notifications} />
-                )}
-              </>
-            )}
-          </main>
-        </div>
+        {children}
       </div>
     </div>
   );
@@ -571,21 +665,38 @@ function CalendarView({
 
           <div className="mt-4 space-y-3">
             {todayPosts.length > 0 ? (
-              todayPosts.map((post) => (
-                <PostRow
-                  key={post.id}
-                  post={post}
-                  deletePost={deletePost}
-                  updateStatus={updateStatus}
-                />
-              ))
+  todayPosts.map((post) => (
+    <PostRow
+      key={post.id}
+      post={post}
+      deletePost={deletePost}
+      updateStatus={updateStatus}
+      updatePost={updatePost}
+    />
+  ))
+) : (
+  <EmptyState
+    icon={Calendar}
+    title="No posts for this day"
+    text="Choose another date or add a new post from the quick capture panel."
+  />
+)}
+  <PostRow
+    key={post.id}
+    post={post}
+    deletePost={deletePost}
+    updateStatus={updateStatus}
+    updatePost={updatePost}
+  />
+
+
             ) : (
               <EmptyState
                 icon={Calendar}
                 title="No posts for this day"
                 text="Choose another date or add a new post from the quick capture panel."
               />
-            )}
+            )
           </div>
         </CardShell>
 
@@ -614,6 +725,14 @@ function CalendarView({
                 </div>
               </div>
             ))}
+
+            {upcoming.length === 0 && (
+              <EmptyState
+                icon={Calendar}
+                title="Nothing upcoming yet"
+                text="Add a post and it will appear in your upcoming queue."
+              />
+            )}
           </div>
         </CardShell>
       </div>
@@ -621,7 +740,7 @@ function CalendarView({
   );
 }
 
-function PostRow({ post, deletePost, updateStatus }) {
+function PostRow({ post, deletePost, updateStatus, updatePost }) {
   const safeVideoUrl = normalizeUrl(post.video_link);
 
   return (
@@ -648,7 +767,66 @@ function PostRow({ post, deletePost, updateStatus }) {
           </div>
 
           <div className="mt-4 space-y-3">
-            {post.notes && <DetailBlock icon={FileText} label="Notes" value={post.notes} />}
+           <div className="rounded-2xl border border-slate-200 bg-white p-3">
+  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+    Notes
+  </label>
+  <textarea
+    value={post.notes || ""}
+    onChange={(e) => updatePost(post.id, "notes", e.target.value)}
+    rows={3}
+    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400"
+    placeholder="Add internal notes..."
+  />
+</div>
+<div className="rounded-2xl border border-slate-200 bg-white p-3">
+  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+    Video Link
+  </label>
+  <input
+    type="text"
+    value={post.video_link || ""}
+    onChange={(e) => updatePost(post.id, "video_link", e.target.value)}
+    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400"
+    placeholder="Paste the video link here..."
+  />
+</div>
+<div className="rounded-2xl border border-slate-200 bg-white p-3">
+  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+    Caption for Approval
+  </label>
+  <textarea
+    value={post.caption || ""}
+    onChange={(e) => updatePost(post.id, "caption", e.target.value)}
+    rows={5}
+    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400"
+    placeholder="Write or edit the caption here..."
+  />
+</div>
+<div className="rounded-2xl border border-slate-200 bg-white p-3">
+  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+    Feedback / Revision Requests
+  </label>
+  <textarea
+    value={post.feedback || ""}
+    onChange={(e) => updatePost(post.id, "feedback", e.target.value)}
+    rows={4}
+    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400"
+    placeholder="Add feedback or requested changes..."
+  />
+</div>
+<div className="rounded-2xl border border-slate-200 bg-white p-3">
+  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+    Revision Notes
+  </label>
+  <textarea
+    value={post.revision_notes || ""}
+    onChange={(e) => updatePost(post.id, "revision_notes", e.target.value)}
+    rows={3}
+    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-400"
+    placeholder="Track what was updated after review..."
+  />
+</div>
 
             {post.video_link && (
               <div className="rounded-2xl border border-slate-200 bg-white p-3">
@@ -667,9 +845,7 @@ function PostRow({ post, deletePost, updateStatus }) {
                     {post.video_link}
                   </a>
                 ) : (
-                  <p className="break-all text-sm text-slate-500">
-                    {post.video_link}
-                  </p>
+                  <p className="break-all text-sm text-slate-500">{post.video_link}</p>
                 )}
               </div>
             )}
@@ -734,7 +910,8 @@ function IdeasView({ ideas, addIdea, convertIdea }) {
         </p>
         <h2 className="mt-1 text-2xl font-semibold">Capture ideas quickly</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          Drop ideas here before they disappear. Turn any one of them into a scheduled post when you’re ready.
+          Drop ideas here before they disappear. Turn any one of them into a scheduled post when
+          you’re ready.
         </p>
 
         <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -970,6 +1147,7 @@ function QuickAdd({ addPost }) {
       <button
         onClick={() => {
           if (!title.trim()) return;
+
           addPost({
             title: title.trim(),
             date,
@@ -980,6 +1158,7 @@ function QuickAdd({ addPost }) {
             video_link: videoLink,
             feedback,
           });
+
           setTitle("");
           setNotes("");
           setVideoLink("");
@@ -1084,10 +1263,18 @@ function buildCalendarGrid(selectedDate, posts) {
   const totalDays = lastDay.getDate();
   const cells = [];
 
-  for (let i = 0; i < leadingBlanks; i += 1) cells.push(null);
+  for (let i = 0; i < leadingBlanks; i += 1) {
+    cells.push(null);
+  }
 
   for (let day = 1; day <= totalDays; day += 1) {
-    const date = new Date(year, month, day).toISOString().slice(0, 10);
+    const localDate = new Date(year, month, day);
+    const date = [
+      localDate.getFullYear(),
+      String(localDate.getMonth() + 1).padStart(2, "0"),
+      String(localDate.getDate()).padStart(2, "0"),
+    ].join("-");
+
     cells.push({
       day,
       date,
@@ -1099,7 +1286,11 @@ function buildCalendarGrid(selectedDate, posts) {
 }
 
 function formatDate(date) {
-  return date.toISOString().slice(0, 10);
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 function stripTime(date) {
