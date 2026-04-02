@@ -1,29 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+const supabaseUrl  = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey  = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-function isValidHttpUrl(value) {
+export let supabaseConfigError = null;
+export let supabase = null;
+
+if (!supabaseUrl || !supabaseKey) {
+  supabaseConfigError =
+    "Supabase environment variables are missing. " +
+    "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Vercel project settings, " +
+    "then redeploy.";
+} else {
   try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
+    supabase = createClient(supabaseUrl, supabaseKey);
+  } catch (e) {
+    supabaseConfigError = `Failed to initialise Supabase: ${e.message}`;
   }
 }
-
-console.log("SUPABASE URL:", supabaseUrl);
-console.log("SUPABASE KEY EXISTS:", Boolean(supabaseAnonKey));
-
-let supabase = null;
-
-if (isValidHttpUrl(supabaseUrl) && supabaseAnonKey) {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-} else {
-  console.error("Invalid Supabase config", {
-    supabaseUrl,
-    hasAnonKey: Boolean(supabaseAnonKey),
-  });
-}
-
-export { supabase };
