@@ -1115,7 +1115,7 @@ function ActivityView() {
         )) : (
           <div style={{padding:60,textAlign:"center"}}>
             <div style={{fontSize:36,marginBottom:12}}>🔔</div>
-            <p style={{fontSize:14,fontWeight:600,color:"#555"},marginBottom:4}>No activity yet</p>
+            <p style={{fontSize:14,fontWeight:600,color:"#555",marginBottom:4}>No activity yet</p>
             <p style={{fontSize:12,color:"#333"}}>Events will appear here as you work.</p>
           </div>
         )}
