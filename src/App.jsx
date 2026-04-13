@@ -321,7 +321,7 @@ export default function App() {
   }
   async function addPost(post){
     if(!supabase)return;
-    const{data,error}=await supabase.from("posts").insert([{...post,video_link:normUrl(post.video_link||""),status:post.status||"Draft",updated_at:new Date().toISOString()}]).select();
+    const{data,error}=await supabase.from("posts").insert([{...post,video_link:normUrl(post.video_link||""),status:post.status||"Draft",priority:post.priority||"Medium",updated_at:new Date().toISOString()}]).select();
     if(error){setErr(error.message);return;}
     if(data?.[0])await notif(`"${data[0].title}" added.`,"success",data[0].id);
     await fetchAll(false);
@@ -356,7 +356,7 @@ export default function App() {
   }
   async function convertIdea(idea){
     if(!supabase)return;
-    const{data,error}=await supabase.from("posts").insert([{title:idea.title||"Untitled",date:fmt(new Date()),platform:idea.platform||"Instagram",status:"Draft",caption:idea.notes||"",notes:"",video_link:"",feedback:"",updated_at:new Date().toISOString()}]).select();
+    const{data,error}=await supabase.from("posts").insert([{title:idea.title||"Untitled",date:fmt(new Date()),platform:idea.platform||"Instagram",status:"Draft",caption:idea.notes||"",notes:"",video_link:"",feedback:"",priority:"Medium",updated_at:new Date().toISOString()}]).select();
     if(error){setErr(error.message);return;}
     await supabase.from("ideas").delete().eq("id",idea.id);
     await notif(`Post created from idea: "${idea.title}"`,"success",data?.[0]?.id??null);
@@ -1105,7 +1105,7 @@ function EditPanel(){
   const[form,setForm]=useState({
     title:post.title||"",date:post.date||fmt(new Date()),
     platform:post.platform||"Instagram",status:post.status||"Draft",
-    notes:post.notes||"",
+    priority:post.priority||"Medium",notes:post.notes||"",
     video_link:post.video_link||"",caption:post.caption||"",feedback:post.feedback||"",
   });
   const[saveState,setSaveState]=useState("idle");
