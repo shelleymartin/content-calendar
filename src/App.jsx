@@ -1,8 +1,5 @@
-/**
- * DEEPER HEALING · CONTENT CALENDAR
- * Premium light-mode SaaS UI
- * Board: HTML5 native drag-and-drop between columns
- */
+// DEEPER HEALING - CONTENT CALENDAR
+// Clean rebuild - drag and drop with optimistic updates
 
 import React, {
   useEffect, useMemo, useState, useCallback,
@@ -19,304 +16,102 @@ import {
 } from "lucide-react";
 import { supabase, supabaseConfigError } from "./lib/supabase";
 
-// ─── Fonts ────────────────────────────────────────────────────────────────────
-(() => {
-  if (document.getElementById("dh-fonts")) return;
-  const l = document.createElement("link");
-  l.id = "dh-fonts"; l.rel = "stylesheet";
-  l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap";
-  document.head.appendChild(l);
-})();
+const _f = document.createElement("link");
+_f.rel = "stylesheet";
+_f.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap";
+document.head.appendChild(_f);
 
-// ─── Global CSS ───────────────────────────────────────────────────────────────
-(() => {
-  if (document.getElementById("dh-css")) return;
-  const s = document.createElement("style");
-  s.id = "dh-css";
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { height: 100%; overflow: hidden; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #F8F9FA; color: #111827;
-      -webkit-font-smoothing: antialiased;
-    }
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 99px; }
+const _s = document.createElement("style");
+_s.textContent = [
+  "*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }",
+  "html, body, #root { height: 100%; overflow: hidden; }",
+  "body { font-family: 'Inter', -apple-system, sans-serif; background: #F8F9FA; color: #111827; -webkit-font-smoothing: antialiased; }",
+  "::-webkit-scrollbar { width: 4px; height: 4px; }",
+  "::-webkit-scrollbar-track { background: transparent; }",
+  "::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 99px; }",
+  "@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }",
+  "@keyframes slideIn { from{transform:translateX(100%)} to{transform:none} }",
+  "@keyframes scaleIn { from{transform:scale(.97);opacity:0} to{transform:none;opacity:1} }",
+  "@keyframes spin { to{transform:rotate(360deg)} }",
+  "@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }",
+  "@keyframes dropPulse { 0%,100%{opacity:.5} 50%{opacity:1} }",
+  ".fade-in { animation: fadeIn 0.18s ease both; }",
+  ".slide-in { animation: slideIn 0.26s cubic-bezier(.32,.72,0,1) both; }",
+  ".scale-in { animation: scaleIn 0.16s ease both; }",
+  ".spin { animation: spin 0.8s linear infinite; }",
+  ".pulse-dot { animation: pulse 1.8s ease infinite; }",
+  ".truncate { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }",
+  ".btn-primary { display:inline-flex; align-items:center; gap:6px; flex-shrink:0; padding:7px 15px; border-radius:8px; background:#111827; color:#fff; font-size:13px; font-weight:600; font-family:Inter,sans-serif; border:none; cursor:pointer; transition:background .15s,box-shadow .15s,transform .1s; white-space:nowrap; }",
+  ".btn-primary:hover { background:#1F2937; box-shadow:0 4px 12px rgba(17,24,39,.18); }",
+  ".btn-primary:active { transform:scale(.98); }",
+  ".btn-secondary { display:inline-flex; align-items:center; gap:5px; flex-shrink:0; padding:6px 12px; border-radius:7px; background:#fff; color:#374151; font-size:12px; font-weight:500; font-family:Inter,sans-serif; border:1px solid #E5E7EB; cursor:pointer; transition:background .12s,border-color .12s; white-space:nowrap; }",
+  ".btn-secondary:hover { background:#F9FAFB; border-color:#D1D5DB; }",
+  ".btn-secondary:active { transform:scale(.98); }",
+  ".btn-ghost { display:inline-flex; align-items:center; gap:4px; flex-shrink:0; padding:4px 7px; border-radius:6px; background:transparent; color:#6B7280; font-size:12px; font-weight:500; font-family:Inter,sans-serif; border:none; cursor:pointer; transition:background .1s,color .1s; }",
+  ".btn-ghost:hover { background:#F3F4F6; color:#111827; }",
+  ".card { background:#fff; border:1px solid #E5E7EB; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.04); }",
+  ".card-hover { transition:border-color .15s,box-shadow .15s,transform .15s; cursor:pointer; }",
+  ".card-hover:hover { border-color:#C7D2FE; box-shadow:0 4px 16px rgba(99,102,241,.1); transform:translateY(-1px); }",
+  ".row-hover { transition:background .1s; cursor:pointer; }",
+  ".row-hover:hover { background:#F9FAFB; }",
+  ".nav-item { display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:8px; background:transparent; color:#6B7280; font-size:13px; font-weight:500; font-family:Inter,sans-serif; border:none; cursor:pointer; width:100%; text-align:left; transition:background .12s,color .12s; }",
+  ".nav-item:hover { background:#F3F4F6; color:#111827; }",
+  ".nav-item.active { background:#EEF2FF; color:#4F46E5; font-weight:600; }",
+  ".field { width:100%; background:#fff; border:1.5px solid #E5E7EB; border-radius:8px; padding:9px 12px; font-size:13px; color:#111827; font-family:Inter,sans-serif; outline:none; transition:border-color .15s,box-shadow .15s; }",
+  ".field:focus { border-color:#6366F1; box-shadow:0 0 0 3px rgba(99,102,241,.1); }",
+  ".field::placeholder { color:#9CA3AF; }",
+  ".tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid transparent; white-space:nowrap; flex-shrink:0; }",
+  ".tag-draft { background:#F3F4F6; color:#6B7280; border-color:#E5E7EB; }",
+  ".tag-approved { background:#ECFDF5; color:#065F46; border-color:#A7F3D0; }",
+  ".tag-scheduled { background:#FFFBEB; color:#92400E; border-color:#FCD34D; }",
+  ".tag-posted { background:#EEF2FF; color:#3730A3; border-color:#C7D2FE; }",
+  ".dot-draft { background:#9CA3AF; flex-shrink:0; }",
+  ".dot-approved { background:#10B981; flex-shrink:0; }",
+  ".dot-scheduled { background:#F59E0B; flex-shrink:0; }",
+  ".dot-posted { background:#6366F1; flex-shrink:0; }",
+  ".overlay { position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.16); backdrop-filter:blur(3px); }",
+  ".cmd-wrap { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; background:rgba(0,0,0,.22); backdrop-filter:blur(4px); }",
+  ".cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); width:100%; min-width:0; overflow:hidden; }",
+  ".cal-dow { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); width:100%; min-width:0; border-bottom:1px solid #F3F4F6; background:#FAFAFA; flex-shrink:0; }",
+  ".cal-cell { height:108px; display:flex; flex-direction:column; min-width:0; overflow:hidden; border-right:1px solid #F3F4F6; border-bottom:1px solid #F3F4F6; cursor:pointer; transition:background .1s; background:#fff; }",
+  ".cal-cell:hover { background:#FAFAFA; }",
+  ".cal-cell.selected { background:#EEF2FF; }",
+  ".cal-cell.today { background:#FFFBEB; }",
+  ".cal-cell.blank { background:#FAFAFA; cursor:default; pointer-events:none; }",
+  ".cal-head { flex-shrink:0; height:26px; display:flex; align-items:center; justify-content:space-between; padding:0 6px; gap:4px; min-width:0; }",
+  ".cal-day-num { font-size:11px; font-weight:700; color:#6B7280; width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:5px; flex-shrink:0; }",
+  ".cal-day-num.is-today { background:#FDE68A; color:#92400E; }",
+  ".cal-day-num.is-selected { background:#C7D2FE; color:#4338CA; }",
+  ".cal-day-num.is-both { background:#6366F1; color:#fff; }",
+  ".cal-count { font-size:9px; font-weight:600; color:#C4B5FD; margin-left:auto; flex-shrink:0; }",
+  ".cal-body { flex:1; min-width:0; overflow:hidden; display:flex; flex-direction:column; gap:2px; padding:0 4px 4px; }",
+  ".cal-chip { display:flex; align-items:center; gap:4px; padding:2px 5px; border-radius:4px; background:#fff; border:1px solid #E5E7EB; cursor:pointer; transition:border-color .12s,background .12s; min-width:0; overflow:hidden; width:100%; flex-shrink:0; }",
+  ".cal-chip:hover { border-color:#A5B4FC; background:#EEF2FF; }",
+  ".cal-chip-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }",
+  ".cal-chip-title { font-size:10px; font-weight:500; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1; }",
+  ".cal-overflow { font-size:9px; font-weight:600; color:#9CA3AF; padding:1px 5px; flex-shrink:0; }",
+  ".k-board { display:flex; gap:12px; height:100%; overflow-x:auto; overflow-y:hidden; padding-bottom:8px; }",
+  ".k-col { flex-shrink:0; width:272px; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:12px; display:flex; flex-direction:column; transition:border-color .15s,background .15s; }",
+  ".k-col.drag-over { border-color:#6366F1; background:#EEF2FF; box-shadow:0 0 0 2px rgba(99,102,241,.15); }",
+  ".k-col-header { padding:12px 14px 10px; border-bottom:1px solid #E5E7EB; display:flex; align-items:center; gap:7px; flex-shrink:0; border-radius:12px 12px 0 0; }",
+  ".k-col-body { flex:1; overflow-y:auto; padding:8px 8px 10px; min-height:80px; }",
+  ".k-card { background:#fff; border:1px solid #E5E7EB; border-radius:10px; padding:13px; margin-bottom:8px; cursor:grab; transition:border-color .15s,box-shadow .15s,transform .15s,opacity .15s; user-select:none; }",
+  ".k-card:hover { border-color:#C7D2FE; box-shadow:0 4px 14px rgba(99,102,241,.1); transform:translateY(-1px); }",
+  ".k-card.dragging { opacity:.35; cursor:grabbing; transform:scale(.97); box-shadow:none; }",
+  ".k-grip { color:#D1D5DB; flex-shrink:0; cursor:grab; transition:color .1s; }",
+  ".k-card:hover .k-grip { color:#9CA3AF; }",
+  ".k-drop-ph { height:56px; border:2px dashed #C7D2FE; border-radius:10px; background:#EEF2FF; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#A5B4FC; animation:dropPulse 1s ease infinite; }",
+].join("\n");
+document.head.appendChild(_s);
 
-    @keyframes fadeIn  { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
-    @keyframes slideIn { from{transform:translateX(100%)} to{transform:none} }
-    @keyframes scaleIn { from{transform:scale(.97);opacity:0} to{transform:none;opacity:1} }
-    @keyframes spin    { to{transform:rotate(360deg)} }
-    @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:.4} }
-    @keyframes dropPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
-
-    .fade-in  { animation: fadeIn  0.18s ease both; }
-    .slide-in { animation: slideIn 0.26s cubic-bezier(.32,.72,0,1) both; }
-    .scale-in { animation: scaleIn 0.16s ease both; }
-    .spin     { animation: spin 0.8s linear infinite; }
-    .pulse-dot{ animation: pulse 1.8s ease infinite; }
-
-    .truncate { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
-
-    /* ── Buttons ── */
-    .btn-primary {
-      display:inline-flex; align-items:center; gap:6px; flex-shrink:0;
-      padding:7px 15px; border-radius:8px;
-      background:#111827; color:#fff;
-      font-size:13px; font-weight:600; font-family:'Inter',sans-serif;
-      border:none; cursor:pointer;
-      transition:background 0.15s, box-shadow 0.15s, transform 0.1s;
-      white-space:nowrap;
-    }
-    .btn-primary:hover  { background:#1F2937; box-shadow:0 4px 12px rgba(17,24,39,.18); }
-    .btn-primary:active { transform:scale(.98); }
-
-    .btn-secondary {
-      display:inline-flex; align-items:center; gap:5px; flex-shrink:0;
-      padding:6px 12px; border-radius:7px;
-      background:#fff; color:#374151;
-      font-size:12px; font-weight:500; font-family:'Inter',sans-serif;
-      border:1px solid #E5E7EB; cursor:pointer;
-      transition:background 0.12s, border-color 0.12s;
-      white-space:nowrap;
-    }
-    .btn-secondary:hover { background:#F9FAFB; border-color:#D1D5DB; }
-    .btn-secondary:active { transform:scale(.98); }
-
-    .btn-ghost {
-      display:inline-flex; align-items:center; gap:4px; flex-shrink:0;
-      padding:4px 7px; border-radius:6px;
-      background:transparent; color:#6B7280;
-      font-size:12px; font-weight:500; font-family:'Inter',sans-serif;
-      border:none; cursor:pointer;
-      transition:background 0.1s, color 0.1s;
-    }
-    .btn-ghost:hover { background:#F3F4F6; color:#111827; }
-
-    /* ── Card ── */
-    .card {
-      background:#fff; border:1px solid #E5E7EB;
-      border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.04);
-    }
-    .card-hover { transition:border-color .15s, box-shadow .15s, transform .15s; cursor:pointer; }
-    .card-hover:hover { border-color:#C7D2FE; box-shadow:0 4px 16px rgba(99,102,241,.1); transform:translateY(-1px); }
-
-    .row-hover { transition:background .1s; cursor:pointer; }
-    .row-hover:hover { background:#F9FAFB; }
-
-    /* ── Sidebar nav ── */
-    .nav-item {
-      display:flex; align-items:center; gap:9px;
-      padding:7px 10px; border-radius:8px;
-      background:transparent; color:#6B7280;
-      font-size:13px; font-weight:500; font-family:'Inter',sans-serif;
-      border:none; cursor:pointer; width:100%; text-align:left;
-      transition:background .12s, color .12s;
-    }
-    .nav-item:hover { background:#F3F4F6; color:#111827; }
-    .nav-item.active { background:#EEF2FF; color:#4F46E5; font-weight:600; }
-    .nav-item.active svg { color:#4F46E5 !important; }
-
-    /* ── Form field ── */
-    .field {
-      width:100%; background:#fff; border:1.5px solid #E5E7EB;
-      border-radius:8px; padding:9px 12px; font-size:13px;
-      color:#111827; font-family:'Inter',sans-serif; outline:none;
-      transition:border-color .15s, box-shadow .15s;
-    }
-    .field:focus { border-color:#6366F1; box-shadow:0 0 0 3px rgba(99,102,241,.1); }
-    .field::placeholder { color:#9CA3AF; }
-
-    /* ── Tags ── */
-    .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid transparent; white-space:nowrap; flex-shrink:0; }
-    .tag-draft     { background:#F3F4F6; color:#6B7280;  border-color:#E5E7EB; }
-    .tag-approved  { background:#ECFDF5; color:#065F46;  border-color:#A7F3D0; }
-    .tag-scheduled { background:#FFFBEB; color:#92400E;  border-color:#FCD34D; }
-    .tag-posted    { background:#EEF2FF; color:#3730A3;  border-color:#C7D2FE; }
-
-    .dot-draft     { background:#9CA3AF; flex-shrink:0; }
-    .dot-approved  { background:#10B981; flex-shrink:0; }
-    .dot-scheduled { background:#F59E0B; flex-shrink:0; }
-    .dot-posted    { background:#6366F1; flex-shrink:0; }
-
-    /* ── Overlays ── */
-    .overlay { position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.16); backdrop-filter:blur(3px); }
-    .cmd-wrap { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; background:rgba(0,0,0,.22); backdrop-filter:blur(4px); }
-
-    /* ═══════════════════════════════════════════
-       CALENDAR CELLS — constrained, no overflow
-    ═══════════════════════════════════════════ */
-    .cal-grid {
-      display:grid;
-      grid-template-columns:repeat(7, minmax(0,1fr));
-      width:100%; min-width:0; overflow:hidden;
-    }
-    .cal-dow {
-      display:grid;
-      grid-template-columns:repeat(7, minmax(0,1fr));
-      width:100%; min-width:0;
-      border-bottom:1px solid #F3F4F6; background:#FAFAFA; flex-shrink:0;
-    }
-    .cal-cell {
-      height:108px; display:flex; flex-direction:column;
-      min-width:0; overflow:hidden;
-      border-right:1px solid #F3F4F6; border-bottom:1px solid #F3F4F6;
-      cursor:pointer; transition:background 0.1s; background:#fff;
-    }
-    .cal-cell:hover    { background:#FAFAFA; }
-    .cal-cell.selected { background:#EEF2FF; }
-    .cal-cell.today    { background:#FFFBEB; }
-    .cal-cell.blank    { background:#FAFAFA; cursor:default; pointer-events:none; }
-    .cal-head {
-      flex-shrink:0; height:26px; display:flex; align-items:center;
-      justify-content:space-between; padding:0 6px; gap:4px; min-width:0;
-    }
-    .cal-day-num {
-      font-size:11px; font-weight:700; color:#6B7280;
-      width:20px; height:20px; display:flex; align-items:center;
-      justify-content:center; border-radius:5px; flex-shrink:0;
-    }
-    .cal-day-num.is-today    { background:#FDE68A; color:#92400E; }
-    .cal-day-num.is-selected { background:#C7D2FE; color:#4338CA; }
-    .cal-day-num.is-both     { background:#6366F1; color:#fff; }
-    .cal-count { font-size:9px; font-weight:600; color:#C4B5FD; margin-left:auto; flex-shrink:0; }
-    .cal-body {
-      flex:1; min-width:0; overflow:hidden;
-      display:flex; flex-direction:column; gap:2px; padding:0 4px 4px;
-    }
-    .cal-chip {
-      display:flex; align-items:center; gap:4px; padding:2px 5px;
-      border-radius:4px; background:#fff; border:1px solid #E5E7EB;
-      cursor:pointer; transition:border-color 0.12s, background 0.12s;
-      min-width:0; overflow:hidden; width:100%; flex-shrink:0;
-    }
-    .cal-chip:hover { border-color:#A5B4FC; background:#EEF2FF; }
-    .cal-chip-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
-    .cal-chip-title {
-      font-size:10px; font-weight:500; color:#374151;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      min-width:0; flex:1;
-    }
-    .cal-overflow { font-size:9px; font-weight:600; color:#9CA3AF; padding:1px 5px; flex-shrink:0; }
-
-    /* ═══════════════════════════════════════════════════
-       KANBAN BOARD — drag and drop
-    ═══════════════════════════════════════════════════ */
-
-    .k-board {
-      display: flex;
-      gap: 12px;
-      height: 100%;
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding-bottom: 8px;
-    }
-
-    /* Each column */
-    .k-col {
-      flex-shrink: 0;
-      width: 272px;
-      background: #F9FAFB;
-      border: 1px solid #E5E7EB;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      transition: border-color 0.15s;
-    }
-
-    /* Column is a valid drop target */
-    .k-col.drag-over {
-      border-color: #6366F1;
-      background: #EEF2FF;
-      box-shadow: 0 0 0 2px rgba(99,102,241,.15);
-    }
-
-    .k-col-header {
-      padding: 12px 14px 10px;
-      border-bottom: 1px solid #E5E7EB;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      flex-shrink: 0;
-      border-radius: 12px 12px 0 0;
-    }
-
-    .k-col-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px 8px 10px;
-      /* Min-height so empty columns still accept drops */
-      min-height: 80px;
-    }
-
-    /* Individual card */
-    .k-card {
-      background: #fff;
-      border: 1px solid #E5E7EB;
-      border-radius: 10px;
-      padding: 13px;
-      margin-bottom: 8px;
-      cursor: grab;
-      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, opacity 0.15s;
-      user-select: none;
-    }
-    .k-card:hover {
-      border-color: #C7D2FE;
-      box-shadow: 0 4px 14px rgba(99,102,241,.1);
-      transform: translateY(-1px);
-    }
-    /* Card being dragged */
-    .k-card.dragging {
-      opacity: 0.4;
-      cursor: grabbing;
-      transform: scale(0.97);
-      box-shadow: none;
-    }
-    /* Grip handle */
-    .k-grip {
-      color: #D1D5DB;
-      flex-shrink: 0;
-      cursor: grab;
-      transition: color 0.1s;
-    }
-    .k-card:hover .k-grip { color: #9CA3AF; }
-
-    /* Drop placeholder — shows where card will land */
-    .k-drop-placeholder {
-      height: 60px;
-      border: 2px dashed #C7D2FE;
-      border-radius: 10px;
-      background: #EEF2FF;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 600;
-      color: #A5B4FC;
-      animation: dropPulse 1s ease infinite;
-    }
-  `;
-  document.head.appendChild(s);
-})();
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-const STATUSES   = ["Draft","Approved","Scheduled","Posted"];
-const PLATFORMS  = ["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
+const STATUSES = ["Draft","Approved","Scheduled","Posted"];
+const PLATFORMS = ["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
 
 const STATUS_META = {
-  Draft:     { tagCls:"tag-draft",     dot:"dot-draft",     label:"Draft"     },
-  Approved:  { tagCls:"tag-approved",  dot:"dot-approved",  label:"Approved"  },
-  Scheduled: { tagCls:"tag-scheduled", dot:"dot-scheduled", label:"Scheduled" },
-  Posted:    { tagCls:"tag-posted",    dot:"dot-posted",    label:"Posted"    },
-};
-
-const STATUS_COL_BG = {
-  Draft:     "#F3F4F6",
-  Approved:  "#ECFDF5",
-  Scheduled: "#FFFBEB",
-  Posted:    "#EEF2FF",
+  Draft:     { tagCls:"tag-draft",     dot:"dot-draft"     },
+  Approved:  { tagCls:"tag-approved",  dot:"dot-approved"  },
+  Scheduled: { tagCls:"tag-scheduled", dot:"dot-scheduled" },
+  Posted:    { tagCls:"tag-posted",    dot:"dot-posted"    },
 };
 
 const PLATFORM_META = {
@@ -341,13 +136,12 @@ const NAV_ITEMS = [
   { id:"activity", label:"Activity",      icon:Activity  },
 ];
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
 const fmt = d =>
   [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 const stripTime = d => new Date(d.getFullYear(),d.getMonth(),d.getDate());
 const normUrl = v => {
   if (!v?.trim()) return "";
-  const s = v.trim().startsWith("http") ? v.trim() : `https://${v.trim()}`;
+  const s = v.trim().startsWith("http") ? v.trim() : "https://"+v.trim();
   try { const u=new URL(s); return ["http:","https:"].includes(u.protocol)?u.toString():""; }
   catch { return ""; }
 };
@@ -360,18 +154,16 @@ const buildGrid = (date,posts) => {
 };
 const relDate = s => {
   if(!s)return"";
-  const diff=Math.round((new Date(`${s}T00:00:00`)-stripTime(new Date()))/864e5);
+  const diff=Math.round((new Date(s+"T00:00:00")-stripTime(new Date()))/864e5);
   if(diff===0)return"Today";if(diff===1)return"Tomorrow";if(diff===-1)return"Yesterday";
-  if(diff>0&&diff<8)return`In ${diff}d`;if(diff<0&&diff>-8)return`${Math.abs(diff)}d ago`;
-  return new Date(`${s}T00:00:00`).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  if(diff>0&&diff<8)return"In "+diff+"d";if(diff<0&&diff>-8)return Math.abs(diff)+"d ago";
+  return new Date(s+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
 };
 const seedDB=()=>({ideas:[],posts:[],vault:[],notifications:[]});
 
-// ─── Context ──────────────────────────────────────────────────────────────────
 const Ctx = createContext(null);
 const useApp = () => useContext(Ctx);
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [db,setDB]             = useState(seedDB());
   const [view,setView]         = useState("home");
@@ -418,9 +210,10 @@ export default function App() {
   useEffect(()=>{
     if(!supabase){setLoading(false);return;}
     let t;
-    const deb=()=>{clearTimeout(t);t=setTimeout(()=>fetchAll(false),800);};
+    // 3 second debounce so realtime never races with optimistic updates
+    const deb=()=>{clearTimeout(t);t=setTimeout(()=>fetchAll(false),3000);};
     fetchAll(true);
-    const ch=supabase.channel("dh-v4")
+    const ch=supabase.channel("dh-v5")
       .on("postgres_changes",{event:"*",schema:"public",table:"posts"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"ideas"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"vault"},deb)
@@ -448,19 +241,20 @@ export default function App() {
 
   const upcoming=useMemo(()=>{const t=fmt(new Date());return filtered.filter(p=>p.date>=t);},[filtered]);
   const grid=useMemo(()=>buildGrid(selDate,db.posts),[selDate,db.posts]);
-  const byStatus=useMemo(()=>Object.fromEntries(STATUSES.map(s=>[s,filtered.filter(p=>p.status===s)])),[filtered]);
+  // Use db.posts (not filtered) so dropped cards always appear in target column
+  const byStatus=useMemo(()=>Object.fromEntries(STATUSES.map(s=>[s,db.posts.filter(p=>p.status===s).sort((a,b)=>new Date(a.date)-new Date(b.date))])),[db.posts]);
   const completion=useMemo(()=>db.posts.length?Math.round(db.posts.filter(p=>p.status==="Posted").length/db.posts.length*100):0,[db.posts]);
 
-  async function notif(msg,type="info",rel=null){
+  async function notif(msg,type,rel){
     if(!supabase)return;
-    await supabase.from("notifications").insert([{message:msg,type,read:false,related_post_id:rel,updated_at:new Date().toISOString()}]);
+    await supabase.from("notifications").insert([{message:msg,type:type||"info",read:false,related_post_id:rel||null,updated_at:new Date().toISOString()}]);
   }
   async function addPost(post){
     if(!supabase)return;
     const payload={title:post.title,date:post.date,platform:post.platform,status:post.status||"Draft",caption:post.caption||"",notes:post.notes||"",video_link:normUrl(post.video_link||""),feedback:post.feedback||"",updated_at:new Date().toISOString()};
     const{data,error}=await supabase.from("posts").insert([payload]).select();
     if(error){setErr(error.message);return;}
-    if(data?.[0])await notif(`"${data[0].title}" added.`,"success",data[0].id);
+    if(data?.[0])await notif('"'+data[0].title+'" added.',"success",data[0].id);
     await fetchAll(false);
   }
   async function updatePost(id,fields){
@@ -468,29 +262,35 @@ export default function App() {
     const payload={title:fields.title,date:fields.date,platform:fields.platform,status:fields.status,notes:fields.notes||"",video_link:normUrl(fields.video_link||""),caption:fields.caption||"",feedback:fields.feedback||"",updated_at:new Date().toISOString()};
     const{data,error}=await supabase.from("posts").update(payload).eq("id",id).select();
     if(error){setErr(error.message);return false;}
-    if(data?.[0])await notif(`"${data[0].title}" updated.`,"info",data[0].id);
+    if(data?.[0])await notif('"'+data[0].title+'" updated.',"info",data[0].id);
     await fetchAll(false);return true;
   }
   async function deletePost(id){
     if(!supabase)return;
     const post=db.posts.find(p=>p.id===id);
     await supabase.from("posts").delete().eq("id",id);
-    if(post)await notif(`"${post.title}" deleted.`,"warning",id);
+    if(post)await notif('"'+post.title+'" deleted.',"warning",id);
     setEdit(prev=>prev?.id===id?null:prev);
     await fetchAll(false);
   }
+
+  // KEY FIX: optimistic-first, no notif call (notif triggers realtime which races)
   async function updateStatus(id,status){
     if(!supabase)return;
-    // Optimistic update: move card in local state immediately so drag-drop sticks
+    // Step 1: update local state immediately — UI reflects change instantly
     setDB(prev=>({...prev,posts:prev.posts.map(p=>p.id===id?{...p,status}:p)}));
     setEdit(prev=>prev?.id===id?{...prev,status}:prev);
-    // Write to Supabase
-    const{data,error}=await supabase.from("posts").update({status,updated_at:new Date().toISOString()}).eq("id",id).select();
-    if(error){setErr(error.message);await fetchAll(false);return;}
-    if(data?.[0])await notif(`"${data[0].title}" → ${status}.`,"info",data[0].id);
-    // Sync after 700ms so realtime does not race with optimistic state
-    setTimeout(()=>fetchAll(false),700);
+    // Step 2: write to Supabase
+    const{error}=await supabase.from("posts")
+      .update({status,updated_at:new Date().toISOString()})
+      .eq("id",id);
+    // Step 3: only refetch on error
+    if(error){setErr(error.message);await fetchAll(false);}
+    // No fetchAll on success — realtime will sync after 3s debounce
+    // The 3s window is much longer than the Supabase write (~100ms)
+    // so the optimistic state is already stable when realtime fires
   }
+
   async function addIdea(text){
     if(!supabase||!text.trim())return;
     await supabase.from("ideas").insert([{title:text.trim(),platform:"Instagram",notes:"",status:"Idea",updated_at:new Date().toISOString()}]);
@@ -501,7 +301,7 @@ export default function App() {
     const{data,error}=await supabase.from("posts").insert([{title:idea.title||"Untitled",date:fmt(new Date()),platform:idea.platform||"Instagram",status:"Draft",caption:idea.notes||"",notes:"",video_link:"",feedback:"",updated_at:new Date().toISOString()}]).select();
     if(error){setErr(error.message);return;}
     await supabase.from("ideas").delete().eq("id",idea.id);
-    await notif(`Post from idea: "${idea.title}"`,"success",data?.[0]?.id??null);
+    await notif('Post from idea: "'+idea.title+'"',"success",data?.[0]?.id||null);
     await fetchAll(false);
   }
   async function addVault(text){
@@ -560,7 +360,6 @@ export default function App() {
   );
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar(){
   const{view,setView,sidebar,setSidebar,db,upcoming}=useApp();
   return(
@@ -585,7 +384,7 @@ function Sidebar(){
           const badge=item.id==="inbox"?db.ideas.length:0;
           return(
             <button key={item.id} onClick={()=>setView(item.id)}
-              className={`nav-item ${view===item.id?"active":""}`}
+              className={"nav-item"+(view===item.id?" active":"")}
               title={item.label}
               style={{marginBottom:1,justifyContent:sidebar?"flex-start":"center",padding:sidebar?"6px 10px":"7px"}}>
               <item.icon style={{width:15,height:15,flexShrink:0,color:view===item.id?"#6366F1":"#9CA3AF"}}/>
@@ -605,7 +404,7 @@ function Sidebar(){
                 {label:"Ideas",value:db.ideas.length,color:"#F59E0B",bg:"#FFFBEB"},
                 {label:"Vault",value:db.vault.length,color:"#8B5CF6",bg:"#F5F3FF"},
               ].map(s=>(
-                <div key={s.label} style={{background:s.bg,borderRadius:7,padding:"7px 8px",border:`1px solid ${s.color}20`}}>
+                <div key={s.label} style={{background:s.bg,borderRadius:7,padding:"7px 8px",border:"1px solid "+s.color+"20"}}>
                   <p style={{fontSize:17,fontWeight:700,color:s.color,lineHeight:1}}>{s.value}</p>
                   <p style={{fontSize:9,color:"#9CA3AF",marginTop:2,textTransform:"uppercase",letterSpacing:"0.08em"}}>{s.label}</p>
                 </div>
@@ -629,7 +428,6 @@ function Sidebar(){
   );
 }
 
-// ─── Top bar ──────────────────────────────────────────────────────────────────
 function TopBar(){
   const{view,setCmdOpen,setQA,filterStatus,setFS,filterPlatform,setFP,sortBy,setSort}=useApp();
   const label=NAV_ITEMS.find(n=>n.id===view)?.label||"Home";
@@ -650,19 +448,19 @@ function TopBar(){
             {val:sortBy,set:setSort,opts:["date","title","status"],lbl:"Sort"},
           ].map((f,i)=>(
             <select key={i} value={f.val} onChange={e=>f.set(e.target.value)}
-              style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:6,padding:"4px 7px",fontSize:11,color:"#374151",cursor:"pointer",outline:"none",fontFamily:"'Inter',sans-serif",flexShrink:0}}>
-              {f.opts.map(o=><option key={o} value={o}>{o==="all"?`All ${f.lbl}`:o}</option>)}
+              style={{background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:6,padding:"4px 7px",fontSize:11,color:"#374151",cursor:"pointer",outline:"none",fontFamily:"Inter,sans-serif",flexShrink:0}}>
+              {f.opts.map(o=><option key={o} value={o}>{o==="all"?"All "+f.lbl:o}</option>)}
             </select>
           ))}
         </div>
       )}
       <button onClick={()=>setCmdOpen(true)}
-        style={{display:"flex",alignItems:"center",gap:7,background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:7,padding:"4px 10px",cursor:"pointer",color:"#9CA3AF",fontSize:12,width:150,fontFamily:"'Inter',sans-serif",flexShrink:0,transition:"border-color 0.15s"}}
+        style={{display:"flex",alignItems:"center",gap:7,background:"#F9FAFB",border:"1px solid #E5E7EB",borderRadius:7,padding:"4px 10px",cursor:"pointer",color:"#9CA3AF",fontSize:12,width:150,fontFamily:"Inter,sans-serif",flexShrink:0}}
         onMouseEnter={e=>e.currentTarget.style.borderColor="#D1D5DB"}
         onMouseLeave={e=>e.currentTarget.style.borderColor="#E5E7EB"}>
         <Search style={{width:11,height:11,flexShrink:0}}/>
-        <span style={{flex:1,textAlign:"left"}}>Search…</span>
-        <kbd style={{fontSize:10,background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:4,padding:"1px 4px",color:"#9CA3AF",flexShrink:0}}>⌘K</kbd>
+        <span style={{flex:1,textAlign:"left"}}>Search...</span>
+        <kbd style={{fontSize:10,background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:4,padding:"1px 4px",color:"#9CA3AF",flexShrink:0}}>K</kbd>
       </button>
       <button onClick={()=>setQA(q=>!q)} className="btn-primary" style={{fontSize:12,padding:"6px 12px"}}>
         <Plus style={{width:12,height:12}}/>New post
@@ -671,7 +469,6 @@ function TopBar(){
   );
 }
 
-// ─── View router ──────────────────────────────────────────────────────────────
 function ViewRouter(){
   const{view}=useApp();
   return(
@@ -687,7 +484,6 @@ function ViewRouter(){
   );
 }
 
-// ─── Home ─────────────────────────────────────────────────────────────────────
 function HomeView(){
   const{db,upcoming,completion,setView,setEdit}=useApp();
   const recent=[...db.posts].sort((a,b)=>new Date(b.updated_at||b.date)-new Date(a.updated_at||a.date)).slice(0,5);
@@ -702,7 +498,7 @@ function HomeView(){
           {label:"Total posts",value:db.posts.length,accent:"#6366F1",bg:"#EEF2FF",icon:FileText},
           {label:"Upcoming",value:upcoming.length,accent:"#8B5CF6",bg:"#F5F3FF",icon:Calendar},
           {label:"Posted",value:db.posts.filter(p=>p.status==="Posted").length,accent:"#10B981",bg:"#ECFDF5",icon:CheckCircle2},
-          {label:"Completion",value:`${completion}%`,accent:"#F59E0B",bg:"#FFFBEB",icon:Target},
+          {label:"Completion",value:completion+"%",accent:"#F59E0B",bg:"#FFFBEB",icon:Target},
         ].map(k=>(
           <div key={k.label} className="card" style={{padding:"14px 16px",minWidth:0}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -721,7 +517,7 @@ function HomeView(){
           <p style={{fontSize:12,color:"#9CA3AF"}}>{completion}% complete</p>
         </div>
         <div style={{height:5,background:"#F3F4F6",borderRadius:99,overflow:"hidden",marginBottom:12}}>
-          <div style={{height:"100%",width:`${completion}%`,background:"linear-gradient(90deg,#6366F1,#8B5CF6)",borderRadius:99,transition:"width 0.8s ease"}}/>
+          <div style={{height:"100%",width:completion+"%",background:"linear-gradient(90deg,#6366F1,#8B5CF6)",borderRadius:99,transition:"width 0.8s ease"}}/>
         </div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
           {STATUSES.map(s=>{
@@ -729,7 +525,7 @@ function HomeView(){
             const sm=STATUS_META[s];
             return(
               <button key={s} onClick={()=>setView("list")} style={{background:"none",border:"none",cursor:"pointer",padding:0}}>
-                <span className={`tag ${sm.tagCls}`}><span className={sm.dot} style={{width:5,height:5,borderRadius:"50%"}}/>{s} {count}</span>
+                <span className={"tag "+sm.tagCls}><span className={sm.dot} style={{width:5,height:5,borderRadius:"50%"}}/>{s} {count}</span>
               </button>
             );
           })}
@@ -776,7 +572,6 @@ function HomeView(){
   );
 }
 
-// ─── Calendar ─────────────────────────────────────────────────────────────────
 function CalendarView(){
   const{db,upcoming,selDate,setSelDate,grid,setEdit,updateStatus}=useApp();
   const todayKey=fmt(new Date()),selKey=fmt(selDate);
@@ -785,7 +580,7 @@ function CalendarView(){
     <div style={{width:"100%",minWidth:0,overflow:"hidden",display:"grid",gridTemplateColumns:"minmax(0,1fr) 240px",gap:12,alignItems:"start"}}>
       <div className="card" style={{width:"100%",minWidth:0,overflow:"hidden",display:"flex",flexDirection:"column"}}>
         <div style={{padding:"12px 16px 10px",borderBottom:"1px solid #F3F4F6",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-          <h2 style={{fontSize:16,fontWeight:700,color:"#111827",letterSpacing:"-0.2px"}}>{selDate.toLocaleDateString("en-US",{month:"long",year:"numeric"})}</h2>
+          <h2 style={{fontSize:16,fontWeight:700,color:"#111827"}}>{selDate.toLocaleDateString("en-US",{month:"long",year:"numeric"})}</h2>
           <div style={{display:"flex",alignItems:"center",gap:5}}>
             <button className="btn-secondary" style={{padding:"4px 7px"}} onClick={()=>setSelDate(new Date(selDate.getFullYear(),selDate.getMonth()-1,1))}><ChevronLeft style={{width:13,height:13}}/></button>
             <button className="btn-secondary" style={{padding:"4px 10px",fontSize:11}} onClick={()=>setSelDate(new Date())}>Today</button>
@@ -799,7 +594,7 @@ function CalendarView(){
         </div>
         <div className="cal-grid">
           {grid.map((cell,i)=>{
-            if(!cell)return<div key={`b-${i}`} className="cal-cell blank"/>;
+            if(!cell)return<div key={"b-"+i} className="cal-cell blank"/>;
             const isToday=cell.date===todayKey,isSel=cell.date===selKey,isBoth=isToday&&isSel;
             const visible=cell.posts.slice(0,2),overflow=cell.posts.length-visible.length;
             let cellCls="cal-cell";
@@ -810,7 +605,7 @@ function CalendarView(){
             else if(isSel)numCls+=" is-selected";
             else if(isToday)numCls+=" is-today";
             return(
-              <div key={cell.date} className={cellCls} onClick={()=>setSelDate(new Date(`${cell.date}T00:00:00`))}>
+              <div key={cell.date} className={cellCls} onClick={()=>setSelDate(new Date(cell.date+"T00:00:00"))}>
                 <div className="cal-head">
                   <span className={numCls}>{cell.day}</span>
                   {cell.posts.length>0&&<span className="cal-count">{cell.posts.length}</span>}
@@ -820,7 +615,7 @@ function CalendarView(){
                     const sm=STATUS_META[p.status]||STATUS_META.Draft;
                     return(
                       <div key={p.id} className="cal-chip" onClick={e=>{e.stopPropagation();setEdit(p);}}>
-                        <span className={`cal-chip-dot ${sm.dot}`}/>
+                        <span className={"cal-chip-dot "+sm.dot}/>
                         <span className="cal-chip-title">{p.title}</span>
                       </div>
                     );
@@ -911,91 +706,125 @@ function CalPostRow({post}){
   );
 }
 
-// ─── Board — Drag and Drop ────────────────────────────────────────────────────
 function BoardView(){
   const{byStatus,setEdit,updateStatus,db}=useApp();
 
-  // Track which card is being dragged and which column is the drop target
-  const[draggingId,setDraggingId]   = useState(null);
-  const[dragOverCol,setDragOverCol] = useState(null);
-  const dragPost = db.posts.find(p=>p.id===draggingId);
+  // Track drag state in a ref — avoids stale closure issues that plague useState
+  const draggingIdRef = useRef(null);
+  const [draggingId, setDraggingId]   = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);
+  // Count of active drag-enters per column — lets us ignore child leave events
+  const enterCountRef = useRef({});
 
-  function onDragStart(e, postId){
+  function getDragPost(){ return db.posts.find(p=>p.id===draggingIdRef.current); }
+
+  // ── Drag handlers ────────────────────────────────────────────────────────
+  function handleDragStart(e, postId){
+    // Set both ref (sync, no stale closure) and state (for rendering)
+    draggingIdRef.current = postId;
     setDraggingId(postId);
     e.dataTransfer.effectAllowed = "move";
-    // Store the id so we can read it on drop
+    // Set the data — use both formats for maximum browser compatibility
     e.dataTransfer.setData("text/plain", postId);
+    e.dataTransfer.setData("application/json", JSON.stringify({postId}));
+    // Without this the whole card renders as the drag ghost on some browsers
+    e.dataTransfer.setDragImage(e.currentTarget, 20, 20);
   }
 
-  function onDragEnd(){
+  function handleDragEnd(){
+    draggingIdRef.current = null;
     setDraggingId(null);
     setDragOverCol(null);
+    enterCountRef.current = {};
   }
 
-  function onDragOver(e, status){
-    e.preventDefault(); // required to allow drop
+  function handleDragOver(e, status){
+    // Must preventDefault to allow drop
+    e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
+  }
+
+  // Use enter/leave counting instead of contains() check —
+  // more reliable because relatedTarget can be null between children
+  function handleDragEnter(e, status){
+    e.preventDefault();
+    const key = status;
+    enterCountRef.current[key] = (enterCountRef.current[key] || 0) + 1;
     setDragOverCol(status);
   }
 
-  function onDragLeave(e){
-    // Only clear if leaving the column entirely (not entering a child)
-    if(!e.currentTarget.contains(e.relatedTarget)){
-      setDragOverCol(null);
+  function handleDragLeave(e, status){
+    const key = status;
+    enterCountRef.current[key] = (enterCountRef.current[key] || 1) - 1;
+    if(enterCountRef.current[key] <= 0){
+      enterCountRef.current[key] = 0;
+      setDragOverCol(prev => prev === status ? null : prev);
     }
   }
 
-  async function onDrop(e, status){
+  async function handleDrop(e, status){
     e.preventDefault();
-    const id = e.dataTransfer.getData("text/plain");
-    setDraggingId(null);
+    e.stopPropagation();
+
+    // Reset visual state immediately
     setDragOverCol(null);
-    if(!id) return;
-    const post = db.posts.find(p=>p.id===id);
-    if(!post || post.status===status) return; // no change needed
+    enterCountRef.current = {};
+
+    // Read id from ref first (more reliable), fall back to dataTransfer
+    const id = draggingIdRef.current || e.dataTransfer.getData("text/plain");
+    draggingIdRef.current = null;
+    setDraggingId(null);
+
+    if(!id){ console.warn("DnD: no id on drop"); return; }
+
+    const post = db.posts.find(p => p.id === id);
+    if(!post){ console.warn("DnD: post not found", id); return; }
+    if(post.status === status){ return; } // no change needed
+
+    console.log("DnD: moving", post.title, "from", post.status, "to", status);
     await updateStatus(id, status);
   }
 
   return(
     <div style={{height:"calc(100vh - 100px)",display:"flex",flexDirection:"column"}}>
-      {/* Header */}
-      <div style={{marginBottom:14,flexShrink:0}}>
+      <div style={{marginBottom:12,flexShrink:0}}>
         <h2 style={{fontSize:20,fontWeight:700,color:"#111827",letterSpacing:"-0.3px"}}>Board</h2>
-        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>
-          Drag cards between columns to update status · Click any card to edit
-        </p>
+        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>Drag cards between columns to update their status</p>
       </div>
 
-      {/* Hint banner */}
-      <div style={{display:"flex",alignItems:"center",gap:8,background:"#F5F3FF",border:"1px solid #DDD6FE",borderRadius:8,padding:"8px 14px",marginBottom:14,flexShrink:0}}>
+      {/* Hint */}
+      <div style={{display:"flex",alignItems:"center",gap:8,background:"#F5F3FF",border:"1px solid #DDD6FE",borderRadius:8,padding:"8px 14px",marginBottom:12,flexShrink:0}}>
         <GripVertical style={{width:14,height:14,color:"#8B5CF6",flexShrink:0}}/>
-        <p style={{fontSize:12,color:"#7C3AED",fontWeight:500}}>
-          Grab the grip icon on any card and drag it to a different column to change its status instantly.
-        </p>
+        <p style={{fontSize:12,color:"#7C3AED",fontWeight:500}}>Click and drag any card to a different column to change its status.</p>
       </div>
 
       {/* Columns */}
       <div className="k-board" style={{flex:1}}>
         {STATUSES.map(status=>{
-          const posts=(byStatus[status]||[]);
-          const sm=STATUS_META[status];
-          const isOver=dragOverCol===status;
-          const willMove=draggingId&&dragPost?.status!==status;
+          const posts = byStatus[status] || [];
+          const sm    = STATUS_META[status];
+          const isOver    = dragOverCol === status;
+          const dragPost  = draggingId ? db.posts.find(p=>p.id===draggingId) : null;
+          const willMove  = draggingId && dragPost && dragPost.status !== status;
 
           return(
             <div
               key={status}
-              className={`k-col${isOver?" drag-over":""}`}
-              onDragOver={e=>onDragOver(e,status)}
-              onDragLeave={onDragLeave}
-              onDrop={e=>onDrop(e,status)}
+              className={"k-col" + (isOver && willMove ? " drag-over" : "")}
+              onDragOver={e=>handleDragOver(e,status)}
+              onDragEnter={e=>handleDragEnter(e,status)}
+              onDragLeave={e=>handleDragLeave(e,status)}
+              onDrop={e=>handleDrop(e,status)}
+              // Prevent text selection during drag
+              style={{userSelect:"none"}}
             >
               {/* Column header */}
-              <div className="k-col-header" style={{background:isOver?STATUS_COL_BG[status]:"transparent"}}>
+              <div className="k-col-header">
                 <span className={sm.dot} style={{width:8,height:8,borderRadius:"50%"}}/>
                 <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>{status}</span>
                 <span style={{background:"#F3F4F6",color:"#9CA3AF",fontSize:11,fontWeight:600,padding:"1px 7px",borderRadius:10,marginLeft:2}}>{posts.length}</span>
-                {isOver&&willMove&&(
+                {isOver && willMove && (
                   <span style={{marginLeft:"auto",fontSize:10,fontWeight:600,color:"#6366F1",background:"#EEF2FF",padding:"2px 8px",borderRadius:10}}>
                     Drop here
                   </span>
@@ -1004,61 +833,31 @@ function BoardView(){
 
               {/* Cards */}
               <div className="k-col-body">
-                {/* Drop placeholder at top when dragging over */}
-                {isOver&&willMove&&(
-                  <div className="k-drop-placeholder">
-                    Move to {status}
-                  </div>
+                {/* Drop target indicator */}
+                {isOver && willMove && (
+                  <div className="k-drop-ph">Move to {status}</div>
                 )}
 
                 {posts.map(p=>{
-                  const pm=PLATFORM_META[p.platform]||PLATFORM_META.Instagram;
-                  const pr=PRIORITY_COLOR[p.priority]||PRIORITY_COLOR.Medium;
-                  const isDragging=p.id===draggingId;
+                  const pm = PLATFORM_META[p.platform] || PLATFORM_META.Instagram;
+                  const pr = PRIORITY_COLOR[p.priority] || PRIORITY_COLOR.Medium;
+                  const isDragging = p.id === draggingId;
+
                   return(
-                    <div
+                    <DragCard
                       key={p.id}
-                      className={`k-card${isDragging?" dragging":""}`}
-                      draggable
-                      onDragStart={e=>onDragStart(e,p.id)}
-                      onDragEnd={onDragEnd}
-                    >
-                      {/* Card top row: grip + title + emoji */}
-                      <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:8}}>
-                        <GripVertical className="k-grip" style={{width:14,height:14,marginTop:2,flexShrink:0}}/>
-                        <p style={{fontSize:13,fontWeight:600,color:"#111827",lineHeight:1.4,flex:1,minWidth:0}}>{p.title}</p>
-                        <span style={{fontSize:14,flexShrink:0}}>{pm.emoji}</span>
-                      </div>
-
-                      {/* Notes preview */}
-                      {p.notes&&(
-                        <p style={{fontSize:11,color:"#6B7280",lineHeight:1.5,marginBottom:8,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",paddingLeft:20}}>
-                          {p.notes}
-                        </p>
-                      )}
-
-                      {/* Footer: priority + date + edit button */}
-                      <div style={{display:"flex",alignItems:"center",gap:6,paddingLeft:20}}>
-                        <div style={{display:"flex",alignItems:"center",gap:4}}>
-                          <span style={{width:5,height:5,borderRadius:"50%",background:pr,flexShrink:0}}/>
-                          <span style={{fontSize:10,color:"#9CA3AF"}}>{p.priority||"Medium"}</span>
-                        </div>
-                        {p.date&&<span style={{fontSize:10,color:"#9CA3AF"}}>{relDate(p.date)}</span>}
-                        <button
-                          onClick={e=>{e.stopPropagation();setEdit(p);}}
-                          className="btn-ghost"
-                          style={{marginLeft:"auto",padding:"2px 6px",fontSize:11,color:"#9CA3AF"}}
-                          onMouseDown={e=>e.stopPropagation()} // prevent drag when clicking edit
-                        >
-                          <Pencil style={{width:10,height:10}}/>
-                          Edit
-                        </button>
-                      </div>
-                    </div>
+                      post={p}
+                      pm={pm}
+                      pr={pr}
+                      isDragging={isDragging}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      onEdit={()=>setEdit(p)}
+                    />
                   );
                 })}
 
-                {posts.length===0&&!isOver&&(
+                {posts.length === 0 && !isOver && (
                   <div style={{padding:"24px 12px",textAlign:"center",color:"#D1D5DB",fontSize:12}}>
                     No posts · drag one here
                   </div>
@@ -1072,7 +871,70 @@ function BoardView(){
   );
 }
 
-// ─── List ─────────────────────────────────────────────────────────────────────
+// Separate component so drag handlers are stable (not recreated on each render)
+function DragCard({ post, pm, pr, isDragging, onDragStart, onDragEnd, onEdit }){
+  const cardRef = useRef(null);
+
+  return(
+    <div
+      ref={cardRef}
+      className={"k-card" + (isDragging ? " dragging" : "")}
+      draggable={true}
+      onDragStart={e => {
+        // Prevent child buttons from interfering
+        e.stopPropagation();
+        onDragStart(e, post.id);
+      }}
+      onDragEnd={e => {
+        e.stopPropagation();
+        onDragEnd();
+      }}
+    >
+      {/* Top row: grip handle + title + platform emoji */}
+      <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:8}}>
+        <GripVertical
+          className="k-grip"
+          style={{width:14,height:14,marginTop:2,flexShrink:0,cursor:"grab"}}
+        />
+        <p style={{fontSize:13,fontWeight:600,color:"#111827",lineHeight:1.4,flex:1,minWidth:0}}>
+          {post.title}
+        </p>
+        <span style={{fontSize:14,flexShrink:0}}>{pm.emoji}</span>
+      </div>
+
+      {/* Notes preview */}
+      {post.notes && (
+        <p style={{fontSize:11,color:"#6B7280",lineHeight:1.5,marginBottom:8,
+          display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",
+          paddingLeft:20}}>
+          {post.notes}
+        </p>
+      )}
+
+      {/* Footer: priority + date + edit button */}
+      <div style={{display:"flex",alignItems:"center",gap:6,paddingLeft:20}}>
+        <span style={{width:5,height:5,borderRadius:"50%",background:pr,flexShrink:0}}/>
+        <span style={{fontSize:10,color:"#9CA3AF"}}>{post.priority||"Medium"}</span>
+        {post.date && <span style={{fontSize:10,color:"#9CA3AF"}}>{relDate(post.date)}</span>}
+        <button
+          className="btn-ghost"
+          style={{marginLeft:"auto",padding:"2px 6px",fontSize:11,color:"#9CA3AF"}}
+          onClick={e=>{
+            e.stopPropagation();
+            e.preventDefault();
+            onEdit();
+          }}
+          // Prevent mousedown from starting a drag on the button
+          onMouseDown={e=>e.stopPropagation()}
+          onDragStart={e=>e.preventDefault()}
+        >
+          <Pencil style={{width:10,height:10}}/>Edit
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ListView(){
   const{filtered,setEdit,updateStatus,deletePost}=useApp();
   const[expanded,setExpanded]=useState(null);
@@ -1131,38 +993,34 @@ function ListView(){
               )}
             </div>
           );
-        }):<EmptyMsg icon="📋" text="No posts found. Try adjusting your filters."/>}
+        }):<EmptyMsg icon="📋" text="No posts found."/>}
       </div>
     </div>
   );
 }
 
-// ─── Inbox ────────────────────────────────────────────────────────────────────
 function InboxView(){
   const{db,addIdea,convertIdea}=useApp();
   const[text,setText]=useState("");
   const[saving,setSaving]=useState(false);
-  async function capture(){
-    if(!text.trim()||saving)return;
-    setSaving(true);await addIdea(text);setText("");setSaving(false);
-  }
+  async function capture(){if(!text.trim()||saving)return;setSaving(true);await addIdea(text);setText("");setSaving(false);}
   return(
     <div style={{maxWidth:720}}>
       <div style={{marginBottom:16}}>
         <h2 style={{fontSize:20,fontWeight:700,color:"#111827",letterSpacing:"-0.3px"}}>Idea Inbox</h2>
-        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>{db.ideas.length} ideas · Capture now, schedule later</p>
+        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>{db.ideas.length} ideas</p>
       </div>
       <div className="card" style={{padding:18,marginBottom:12}}>
         <p style={{fontSize:12,fontWeight:600,color:"#374151",marginBottom:8}}>Capture an idea</p>
         <textarea value={text} onChange={e=>setText(e.target.value)}
-          placeholder="What's the hook? What angle? Drop it here before it disappears…"
+          placeholder="What's the hook? What angle? Drop it here before it disappears..."
           rows={3} className="field" style={{resize:"none",lineHeight:1.6,marginBottom:10}}
           onKeyDown={e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter")capture();}}/>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <p style={{fontSize:11,color:"#9CA3AF"}}>⌘↵ to capture</p>
+          <p style={{fontSize:11,color:"#9CA3AF"}}>Cmd+Enter to capture</p>
           <button onClick={capture} disabled={!text.trim()||saving} className="btn-primary" style={{opacity:!text.trim()?0.5:1}}>
             {saving?<Loader2 style={{width:12,height:12}} className="spin"/>:<Lightbulb style={{width:12,height:12}}/>}
-            {saving?"Capturing…":"Capture idea"}
+            {saving?"Capturing...":"Capture idea"}
           </button>
         </div>
       </div>
@@ -1184,27 +1042,23 @@ function InboxView(){
               Make post<ArrowRight style={{width:10,height:10}}/>
             </button>
           </div>
-        )):<EmptyMsg icon="💡" text="No ideas yet. Type above to capture your first."/>}
+        )):<EmptyMsg icon="💡" text="No ideas yet."/>}
       </div>
     </div>
   );
 }
 
-// ─── Vault ────────────────────────────────────────────────────────────────────
 function VaultView(){
   const{db,addVault,deleteVault}=useApp();
   const[text,setText]=useState("");
   const[confirm,setConfirm]=useState(null);
   const[saving,setSaving]=useState(false);
-  async function save(){
-    if(!text.trim()||saving)return;
-    setSaving(true);await addVault(text);setText("");setSaving(false);
-  }
+  async function save(){if(!text.trim()||saving)return;setSaving(true);await addVault(text);setText("");setSaving(false);}
   return(
     <div style={{maxWidth:860}}>
       <div style={{marginBottom:16}}>
         <h2 style={{fontSize:20,fontWeight:700,color:"#111827",letterSpacing:"-0.3px"}}>Content Vault</h2>
-        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>{db.vault.length} items · Hooks, CTAs, hashtags, frameworks</p>
+        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>{db.vault.length} items</p>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"300px minmax(0,1fr)",gap:12,alignItems:"start"}}>
         <div className="card" style={{padding:18}}>
@@ -1212,15 +1066,12 @@ function VaultView(){
             <div style={{width:26,height:26,borderRadius:7,background:"#ECFDF5",display:"flex",alignItems:"center",justifyContent:"center"}}><Archive style={{width:12,height:12,color:"#10B981"}}/></div>
             <p style={{fontSize:12,fontWeight:600,color:"#374151"}}>Save to vault</p>
           </div>
-          <textarea value={text} onChange={e=>setText(e.target.value)}
-            placeholder="Hook, CTA, hashtag group, caption framework…"
-            rows={5} className="field" style={{resize:"none",lineHeight:1.6,marginBottom:10}}/>
-          <button onClick={save} disabled={!text.trim()||saving} className="btn-primary"
-            style={{width:"100%",justifyContent:"center",opacity:!text.trim()?0.5:1,background:"#10B981"}}
+          <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Hook, CTA, hashtag group..." rows={5} className="field" style={{resize:"none",lineHeight:1.6,marginBottom:10}}/>
+          <button onClick={save} disabled={!text.trim()||saving} className="btn-primary" style={{width:"100%",justifyContent:"center",opacity:!text.trim()?0.5:1,background:"#10B981"}}
             onMouseEnter={e=>{if(text.trim())e.currentTarget.style.background="#059669";}}
             onMouseLeave={e=>e.currentTarget.style.background="#10B981"}>
             {saving?<Loader2 style={{width:12,height:12}} className="spin"/>:<Upload style={{width:12,height:12}}/>}
-            {saving?"Saving…":"Save to vault"}
+            {saving?"Saving...":"Save to vault"}
           </button>
         </div>
         {db.vault.length>0?(
@@ -1237,8 +1088,7 @@ function VaultView(){
                     <button onClick={()=>setConfirm(null)} style={{padding:"2px 8px",borderRadius:4,border:"1px solid #E5E7EB",background:"#fff",fontSize:10,fontWeight:700,cursor:"pointer",color:"#6B7280"}}>No</button>
                   </div>
                 ):(
-                  <button onClick={()=>setConfirm(item.id)} className="btn-ghost"
-                    style={{position:"absolute",top:8,right:8,padding:4,color:"#D1D5DB"}}
+                  <button onClick={()=>setConfirm(item.id)} className="btn-ghost" style={{position:"absolute",top:8,right:8,padding:4,color:"#D1D5DB"}}
                     onMouseEnter={e=>{e.currentTarget.style.color="#EF4444";e.currentTarget.style.background="#FEF2F2";}}
                     onMouseLeave={e=>{e.currentTarget.style.color="#D1D5DB";e.currentTarget.style.background="transparent";}}>
                     <Trash2 style={{width:11,height:11}}/>
@@ -1249,7 +1099,7 @@ function VaultView(){
           </div>
         ):(
           <div className="card" style={{padding:48,textAlign:"center",border:"1px dashed #E5E7EB",background:"#FAFAFA"}}>
-            <EmptyMsg icon="🗄️" text="Vault is empty. Save hooks, CTAs, and frameworks here."/>
+            <EmptyMsg icon="🗄️" text="Vault is empty."/>
           </div>
         )}
       </div>
@@ -1257,7 +1107,6 @@ function VaultView(){
   );
 }
 
-// ─── Activity ─────────────────────────────────────────────────────────────────
 function ActivityView(){
   const{db}=useApp();
   const dotCls={success:"dot-approved",warning:"dot-scheduled",info:"dot-posted",error:"dot-draft"};
@@ -1266,7 +1115,7 @@ function ActivityView(){
     <div style={{maxWidth:600}}>
       <div style={{marginBottom:16}}>
         <h2 style={{fontSize:20,fontWeight:700,color:"#111827",letterSpacing:"-0.3px"}}>Activity</h2>
-        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>{db.notifications.length} events logged</p>
+        <p style={{fontSize:13,color:"#6B7280",marginTop:2}}>{db.notifications.length} events</p>
       </div>
       <div className="card" style={{overflow:"hidden"}}>
         {db.notifications.length>0?db.notifications.map((n,i)=>(
@@ -1278,7 +1127,7 @@ function ActivityView(){
               <p style={{fontSize:13,color:"#374151",lineHeight:1.5}}>{n.message}</p>
               {n.created_at&&<p style={{fontSize:11,color:"#9CA3AF",marginTop:2}}>{new Date(n.created_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</p>}
             </div>
-            <span className={`tag ${tagCls[n.type]||"tag-draft"}`} style={{fontSize:9,textTransform:"uppercase",letterSpacing:"0.08em",flexShrink:0}}>{n.type}</span>
+            <span className={"tag "+(tagCls[n.type]||"tag-draft")} style={{fontSize:9,textTransform:"uppercase",letterSpacing:"0.08em",flexShrink:0}}>{n.type}</span>
           </div>
         )):<EmptyMsg icon="🔔" text="No activity yet."/>}
       </div>
@@ -1286,7 +1135,6 @@ function ActivityView(){
   );
 }
 
-// ─── Quick Add bar ────────────────────────────────────────────────────────────
 function QuickAddBar(){
   const{addPost,setQA}=useApp();
   const[title,setTitle]=useState("");
@@ -1301,7 +1149,7 @@ function QuickAddBar(){
     await addPost({title:title.trim(),date,platform,status:"Draft",caption:"",notes:"",video_link:"",feedback:""});
     setSaving(false);setQA(false);
   }
-  const inp={background:"#fff",border:"1px solid #E5E7EB",borderRadius:7,padding:"6px 10px",fontSize:13,color:"#111827",fontFamily:"'Inter',sans-serif",outline:"none"};
+  const inp={background:"#fff",border:"1px solid #E5E7EB",borderRadius:7,padding:"6px 10px",fontSize:13,color:"#111827",fontFamily:"Inter,sans-serif",outline:"none"};
   return(
     <div className="fade-in" style={{background:"#F9FAFB",borderBottom:"1px solid #E5E7EB",padding:"10px 16px",display:"flex",alignItems:"center",gap:7,flexWrap:"wrap",minWidth:0}}>
       <input ref={ref} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Post title *"
@@ -1314,14 +1162,13 @@ function QuickAddBar(){
       </select>
       <button onClick={submit} disabled={!title.trim()||saving} className="btn-primary" style={{opacity:!title.trim()?0.5:1}}>
         {saving?<Loader2 style={{width:12,height:12}} className="spin"/>:<Plus style={{width:12,height:12}}/>}
-        {saving?"Adding…":"Add"}
+        {saving?"Adding...":"Add"}
       </button>
       <button onClick={()=>setQA(false)} className="btn-ghost" style={{padding:5}}><X style={{width:13,height:13}}/></button>
     </div>
   );
 }
 
-// ─── Edit panel ───────────────────────────────────────────────────────────────
 function EditPanel(){
   const{editPost:post,setEdit,updatePost,deletePost,updateStatus}=useApp();
   const[form,setForm]=useState({
@@ -1355,7 +1202,7 @@ function EditPanel(){
     window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);
   },[setEdit]);
 
-  const inp={width:"100%",background:"#fff",border:"1.5px solid #E5E7EB",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#111827",fontFamily:"'Inter',sans-serif",outline:"none",transition:"border-color .15s,box-shadow .15s"};
+  const inp={width:"100%",background:"#fff",border:"1.5px solid #E5E7EB",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#111827",fontFamily:"Inter,sans-serif",outline:"none",transition:"border-color .15s,box-shadow .15s"};
   const foc={onFocus:e=>{e.target.style.borderColor="#6366F1";e.target.style.boxShadow="0 0 0 3px rgba(99,102,241,.1)";},onBlur:e=>{e.target.style.borderColor="#E5E7EB";e.target.style.boxShadow="none";}};
 
   return(
@@ -1379,7 +1226,7 @@ function EditPanel(){
         </div>
         <div style={{padding:"4px 16px",background:"#F5F3FF",borderBottom:"1px solid #EDE9FE",flexShrink:0,display:"flex",alignItems:"center",gap:5}}>
           <Zap style={{width:9,height:9,color:"#8B5CF6"}}/>
-          <p style={{fontSize:10,color:"#7C3AED",fontWeight:500}}>Auto-saves 1.5s after you stop typing · Esc to close</p>
+          <p style={{fontSize:10,color:"#7C3AED",fontWeight:500}}>Auto-saves 1.5s after you stop typing</p>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"18px 16px"}}>
           <input value={form.title} onChange={sf("title")} placeholder="Post title"
@@ -1406,10 +1253,10 @@ function EditPanel(){
             </div>
           </FieldRow>
           <div style={{height:1,background:"#F3F4F6",margin:"2px 0 16px"}}/>
-          <FieldRow label="Notes" style={{marginBottom:12}}><textarea value={form.notes} onChange={sf("notes")} placeholder="Production notes, direction, context…" rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
-          <FieldRow label="Video Link" style={{marginBottom:12}}><input value={form.video_link} onChange={sf("video_link")} placeholder="https://drive.google.com/…" style={inp} {...foc}/></FieldRow>
-          <FieldRow label="Caption for Approval" style={{marginBottom:12}}><textarea value={form.caption} onChange={sf("caption")} placeholder="Full caption copy for client review…" rows={5} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
-          <FieldRow label="Feedback / Revisions" style={{marginBottom:12}}><textarea value={form.feedback} onChange={sf("feedback")} placeholder="Client feedback or revision notes…" rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
+          <FieldRow label="Notes" style={{marginBottom:12}}><textarea value={form.notes} onChange={sf("notes")} placeholder="Production notes, direction, context..." rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
+          <FieldRow label="Video Link" style={{marginBottom:12}}><input value={form.video_link} onChange={sf("video_link")} placeholder="https://drive.google.com/..." style={inp} {...foc}/></FieldRow>
+          <FieldRow label="Caption for Approval" style={{marginBottom:12}}><textarea value={form.caption} onChange={sf("caption")} placeholder="Full caption copy for client review..." rows={5} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
+          <FieldRow label="Feedback / Revisions" style={{marginBottom:12}}><textarea value={form.feedback} onChange={sf("feedback")} placeholder="Client feedback or revision notes..." rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
         </div>
         <div style={{padding:"10px 16px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",justifyContent:"flex-end"}}>
           <button onClick={()=>setEdit(null)} className="btn-primary" style={{fontSize:12,padding:"6px 16px"}}>Done</button>
@@ -1419,7 +1266,6 @@ function EditPanel(){
   );
 }
 
-// ─── Command palette ──────────────────────────────────────────────────────────
 function CommandPalette(){
   const{db,setCmdOpen,setView,setEdit,setQA}=useApp();
   const[q,setQ]=useState("");
@@ -1437,7 +1283,7 @@ function CommandPalette(){
       {type:"nav",label:"Content Vault", icon:Archive,   action:()=>{setView("vault");   setCmdOpen(false);}},
       {type:"nav",label:"New post",      icon:Plus,      action:()=>{setQA(true);        setCmdOpen(false);}},
     ];
-    const hits=lq?db.posts.filter(p=>(p.title||"").toLowerCase().includes(lq)).slice(0,5).map(p=>({type:"post",label:p.title,sub:`${p.platform} · ${relDate(p.date)}`,icon:FileText,action:()=>{setEdit(p);setCmdOpen(false);}})):[];
+    const hits=lq?db.posts.filter(p=>(p.title||"").toLowerCase().includes(lq)).slice(0,5).map(p=>({type:"post",label:p.title,sub:p.platform+" · "+relDate(p.date),icon:FileText,action:()=>{setEdit(p);setCmdOpen(false);}})):[];
     return[...(lq?cmds.filter(c=>c.label.toLowerCase().includes(lq)):cmds),...hits];
   },[q,db.posts]);
   useEffect(()=>setSel(0),[results.length]);
@@ -1453,14 +1299,14 @@ function CommandPalette(){
         <div style={{display:"flex",alignItems:"center",gap:9,padding:"11px 14px",borderBottom:"1px solid #F3F4F6"}}>
           <Search style={{width:14,height:14,color:"#9CA3AF",flexShrink:0}}/>
           <input ref={ref} value={q} onChange={e=>setQ(e.target.value)} onKeyDown={handleKey}
-            placeholder="Search or navigate…"
-            style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:"#111827",fontFamily:"'Inter',sans-serif"}}/>
+            placeholder="Search or navigate..."
+            style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:14,color:"#111827",fontFamily:"Inter,sans-serif"}}/>
           <kbd style={{fontSize:10,background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:4,padding:"1px 5px",color:"#9CA3AF",flexShrink:0}}>Esc</kbd>
         </div>
         <div style={{maxHeight:320,overflowY:"auto",padding:"4px 0"}}>
           {results.length>0?results.map((r,i)=>(
             <button key={i} onClick={r.action}
-              style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"7px 14px",border:"none",cursor:"pointer",textAlign:"left",background:sel===i?"#EEF2FF":"transparent",transition:"background 0.1s",fontFamily:"'Inter',sans-serif"}}
+              style={{width:"100%",display:"flex",alignItems:"center",gap:9,padding:"7px 14px",border:"none",cursor:"pointer",textAlign:"left",background:sel===i?"#EEF2FF":"transparent",transition:"background 0.1s",fontFamily:"Inter,sans-serif"}}
               onMouseEnter={()=>setSel(i)}>
               <r.icon style={{width:13,height:13,color:sel===i?"#6366F1":"#9CA3AF",flexShrink:0}}/>
               <div style={{flex:1,minWidth:0}}>
@@ -1472,7 +1318,7 @@ function CommandPalette(){
           )):<div style={{padding:20,textAlign:"center",color:"#9CA3AF",fontSize:13}}>No results</div>}
         </div>
         <div style={{padding:"7px 14px",borderTop:"1px solid #F3F4F6",display:"flex",gap:12}}>
-          {[["↑↓","Navigate"],["↵","Open"],["Esc","Close"]].map(([k,l])=>(
+          {[["Up/Down","Navigate"],["Enter","Open"],["Esc","Close"]].map(([k,l])=>(
             <div key={k} style={{display:"flex",alignItems:"center",gap:4}}>
               <kbd style={{fontSize:10,background:"#F3F4F6",border:"1px solid #E5E7EB",borderRadius:3,padding:"1px 4px",color:"#9CA3AF"}}>{k}</kbd>
               <span style={{fontSize:10,color:"#9CA3AF"}}>{l}</span>
@@ -1484,11 +1330,10 @@ function CommandPalette(){
   );
 }
 
-// ─── Shared primitives ────────────────────────────────────────────────────────
 function StatusTag({status,small}){
   const sm=STATUS_META[status]||STATUS_META.Draft;
   return(
-    <span className={`tag ${sm.tagCls}`} style={{fontSize:small?10:11}}>
+    <span className={"tag "+sm.tagCls} style={{fontSize:small?10:11}}>
       <span className={sm.dot} style={{width:small?4:5,height:small?4:5,borderRadius:"50%"}}/>{status}
     </span>
   );
@@ -1523,7 +1368,7 @@ function LoadingState(){
       <div style={{width:34,height:34,borderRadius:9,background:"linear-gradient(135deg,#6366F1,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,boxShadow:"0 4px 14px rgba(99,102,241,.3)"}}>🌿</div>
       <div style={{display:"flex",alignItems:"center",gap:7,color:"#9CA3AF"}}>
         <Loader2 style={{width:14,height:14}} className="spin"/>
-        <span style={{fontSize:13,fontWeight:500}}>Loading your workspace…</span>
+        <span style={{fontSize:13,fontWeight:500}}>Loading your workspace...</span>
       </div>
     </div>
   );
