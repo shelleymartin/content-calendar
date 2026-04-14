@@ -16,12 +16,16 @@ import {
 } from "lucide-react";
 import { supabase, supabaseConfigError } from "./lib/supabase";
 
-const _f = document.createElement("link");
-_f.rel = "stylesheet";
-_f.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap";
-document.head.appendChild(_f);
+if (!document.getElementById("dh-fonts")) {
+  const _f = document.createElement("link");
+  _f.id = "dh-fonts"; _f.rel = "stylesheet";
+  _f.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap";
+  document.head.appendChild(_f);
+}
 
+if (!document.getElementById("dh-css")) {
 const _s = document.createElement("style");
+_s.id = "dh-css";
 _s.textContent = [
   "*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }",
   "html, body, #root { height: 100%; overflow: hidden; }",
@@ -103,6 +107,7 @@ _s.textContent = [
   ".k-drop-ph { height:56px; border:2px dashed #C7D2FE; border-radius:10px; background:#EEF2FF; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#A5B4FC; animation:dropPulse 1s ease infinite; }",
 ].join("\n");
 document.head.appendChild(_s);
+}
 
 const STATUSES = ["Draft","Approved","Scheduled","Posted"];
 const PLATFORMS = ["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
@@ -239,7 +244,8 @@ export default function App() {
       });
   },[db.posts,search,filterStatus,filterPlatform,sortBy]);
 
-  const upcoming=useMemo(()=>{const t=fmt(new Date());return filtered.filter(p=>p.date>=t);},[filtered]);
+  // Use db.posts so upcoming count is not affected by active filters
+  const upcoming=useMemo(()=>{const t=fmt(new Date());return db.posts.filter(p=>p.date>=t&&p.status!=="Posted");},[db.posts]);
   const grid=useMemo(()=>buildGrid(selDate,db.posts),[selDate,db.posts]);
   // Use db.posts (not filtered) so dropped cards always appear in target column
   const byStatus=useMemo(()=>Object.fromEntries(STATUSES.map(s=>[s,db.posts.filter(p=>p.status===s).sort((a,b)=>new Date(a.date)-new Date(b.date))])),[db.posts]);
@@ -263,11 +269,13 @@ export default function App() {
     const{data,error}=await supabase.from("posts").update(payload).eq("id",id).select();
     if(error){setErr(error.message);return false;}
     if(data?.[0])await notif('"'+data[0].title+'" updated.',"info",data[0].id);
+    // Sync editPost so the panel shows fresh data after autosave
+    if(data?.[0]) setEdit(prev=>prev?.id===id ? {...prev,...data[0]} : prev);
     await fetchAll(false);return true;
   }
   async function deletePost(id){
     if(!supabase)return;
-    const post=db.posts.find(p=>p.id===id);
+    const post=db.posts.find(p=>String(p.id)===String(id));
     await supabase.from("posts").delete().eq("id",id);
     if(post)await notif('"'+post.title+'" deleted.',"warning",id);
     setEdit(prev=>prev?.id===id?null:prev);
@@ -716,8 +724,6 @@ function BoardView(){
   // Count of active drag-enters per column — lets us ignore child leave events
   const enterCountRef = useRef({});
 
-  function getDragPost(){ return db.posts.find(p=>p.id===draggingIdRef.current); }
-
   // ── Drag handlers ────────────────────────────────────────────────────────
   function handleDragStart(e, postId){
     // Set both ref (sync, no stale closure) and state (for rendering)
@@ -828,8 +834,10 @@ function BoardView(){
           const posts = byStatus[status] || [];
           const sm    = STATUS_META[status];
           const isOver    = dragOverCol === status;
-          const dragPost  = draggingId ? db.posts.find(p=>p.id===draggingId) : null;
-          const willMove  = draggingId && dragPost && dragPost.status !== status;
+          // Use ref for current dragging id — state can lag 1 render behind ref
+          const liveDragId = draggingIdRef.current ?? draggingId;
+          const dragPost  = liveDragId ? db.posts.find(p=>String(p.id)===String(liveDragId)) : null;
+          const willMove  = liveDragId && dragPost && dragPost.status !== status;
 
           return(
             <div
@@ -864,7 +872,7 @@ function BoardView(){
                 {posts.map(p=>{
                   const pm = PLATFORM_META[p.platform] || PLATFORM_META.Instagram;
                   const pr = PRIORITY_COLOR[p.priority] || PRIORITY_COLOR.Medium;
-                  const isDragging = p.id === draggingId;
+                  const isDragging = draggingId != null && String(p.id) === String(draggingId);
 
                   return(
                     <DragCard
