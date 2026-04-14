@@ -419,7 +419,7 @@ export default function App() {
   useEffect(()=>{
     if(!supabase){setLoading(false);return;}
     let t;
-    const deb=()=>{clearTimeout(t);t=setTimeout(()=>fetchAll(false),200);};
+    const deb=()=>{clearTimeout(t);t=setTimeout(()=>fetchAll(false),800);};
     fetchAll(true);
     const ch=supabase.channel("dh-v4")
       .on("postgres_changes",{event:"*",schema:"public",table:"posts"},deb)
@@ -482,11 +482,15 @@ export default function App() {
   }
   async function updateStatus(id,status){
     if(!supabase)return;
-    const{data,error}=await supabase.from("posts").update({status,updated_at:new Date().toISOString()}).eq("id",id).select();
-    if(error){setErr(error.message);return;}
-    if(data?.[0])await notif(`"${data[0].title}" → ${status}.`,"info",data[0].id);
+    // Optimistic update: move card in local state immediately so drag-drop sticks
+    setDB(prev=>({...prev,posts:prev.posts.map(p=>p.id===id?{...p,status}:p)}));
     setEdit(prev=>prev?.id===id?{...prev,status}:prev);
-    await fetchAll(false);
+    // Write to Supabase
+    const{data,error}=await supabase.from("posts").update({status,updated_at:new Date().toISOString()}).eq("id",id).select();
+    if(error){setErr(error.message);await fetchAll(false);return;}
+    if(data?.[0])await notif(`"${data[0].title}" → ${status}.`,"info",data[0].id);
+    // Sync after 700ms so realtime does not race with optimistic state
+    setTimeout(()=>fetchAll(false),700);
   }
   async function addIdea(text){
     if(!supabase||!text.trim())return;
