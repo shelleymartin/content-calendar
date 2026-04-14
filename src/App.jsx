@@ -725,7 +725,7 @@ function BoardView(){
     setDraggingId(postId);
     e.dataTransfer.effectAllowed = "move";
     // Set the data — use both formats for maximum browser compatibility
-    e.dataTransfer.setData("text/plain", postId);
+    e.dataTransfer.setData("text/plain", String(postId));
     e.dataTransfer.setData("application/json", JSON.stringify({postId}));
     // Without this the whole card renders as the drag ghost on some browsers
     e.dataTransfer.setDragImage(e.currentTarget, 20, 20);
@@ -767,23 +767,46 @@ function BoardView(){
     e.preventDefault();
     e.stopPropagation();
 
-    // Reset visual state immediately
+    // Reset visual state
     setDragOverCol(null);
     enterCountRef.current = {};
 
-    // Read id from ref first (more reliable), fall back to dataTransfer
-    const id = draggingIdRef.current || e.dataTransfer.getData("text/plain");
+    // Read raw id — ref is sync-safe, dataTransfer is the fallback
+    const rawId = draggingIdRef.current ?? e.dataTransfer.getData("text/plain");
+
+    // Debug: log types so we can catch any future id mismatch
+    console.log("DnD drop", {
+      rawId,
+      rawIdType: typeof rawId,
+      targetStatus: status,
+      postIds: db.posts.map(p=>[p.id, typeof p.id]).slice(0,10),
+    });
+
+    // Coerce both sides to string for comparison — fixes numeric vs string id mismatch
+    const post = db.posts.find(p => String(p.id) === String(rawId));
+
+    if(!post){
+      console.warn("DnD: post not found", {
+        rawId,
+        rawIdType: typeof rawId,
+        postIds: db.posts.map(p=>[p.id, typeof p.id]).slice(0,10),
+      });
+      // Clear state even on failure
+      draggingIdRef.current = null;
+      setDraggingId(null);
+      return;
+    }
+
+    // Clear drag state AFTER post is confirmed found
     draggingIdRef.current = null;
     setDraggingId(null);
 
-    if(!id){ console.warn("DnD: no id on drop"); return; }
-
-    const post = db.posts.find(p => p.id === id);
-    if(!post){ console.warn("DnD: post not found", id); return; }
-    if(post.status === status){ return; } // no change needed
+    if(post.status === status) return; // no change needed
 
     console.log("DnD: moving", post.title, "from", post.status, "to", status);
-    await updateStatus(id, status);
+
+    // Use post.id (the real typed id from Supabase) not rawId
+    await updateStatus(post.id, status);
   }
 
   return(
