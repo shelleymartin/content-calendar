@@ -33,6 +33,7 @@ import { supabase, supabaseConfigError } from "./lib/supabase";
   if (document.getElementById("dh-css")) return;
   const s = document.createElement("style");
   s.id = "dh-css";
+  s.textContent = `
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; overflow: hidden; }
     body {
