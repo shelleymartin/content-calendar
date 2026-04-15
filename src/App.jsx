@@ -125,7 +125,7 @@ _s.textContent = [
   ".k-drop-ph { height:56px; border:2px dashed #C7D2FE; border-radius:10px; background:#EEF2FF; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#A5B4FC; animation:dropPulse 1s ease infinite; }",
   ".media-card { background:#F9FAFB; border:1.5px solid #E5E7EB; border-radius:10px; overflow:hidden; transition:border-color .15s,box-shadow .15s; }",
   ".media-card:hover { border-color:#C7D2FE; box-shadow:0 2px 10px rgba(99,102,241,.08); }",
-  ".media-card-preview { width:100%; height:120px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#F0F4FF,#EEF2FF); border-bottom:1px solid #E5E7EB; position:relative; overflow:hidden; }",
+  ".media-card-preview { width:100%; display:flex; align-items:center; justify-content:center; background:#F9FAFB; position:relative; overflow:hidden; border-radius:10px 10px 0 0; }",
   ".media-card-body { padding:10px 12px; }",
   ".media-card-actions { display:flex; gap:6px; padding:8px 12px; border-top:1px solid #F3F4F6; background:#FAFAFA; }",
   ".media-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid #E5E7EB; background:#fff; color:#374151; transition:all .12s; font-family:Inter,sans-serif; white-space:nowrap; }",
@@ -1319,16 +1319,18 @@ function EditPanel(){
           <Zap style={{width:9,height:9,color:"#8B5CF6"}}/>
           <p style={{fontSize:10,color:"#7C3AED",fontWeight:500}}>Auto-saves 1.5s after you stop typing</p>
         </div>
-        <div style={{flex:1,overflowY:"auto",padding:"20px 18px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"22px 20px"}}>
 
-          {/* ── Title ── */}
+          {/* ── Title — large, underline on focus ── */}
           <input value={form.title} onChange={sf("title")} placeholder="Post title"
-            style={{...inp,fontSize:19,fontWeight:700,marginBottom:20,letterSpacing:"-0.3px",border:"none",borderBottom:"2px solid #F3F4F6",borderRadius:0,padding:"0 0 10px 0",boxShadow:"none"}}
+            style={{...inp,width:"100%",fontSize:18,fontWeight:700,marginBottom:22,
+              letterSpacing:"-0.3px",border:"none",borderBottom:"2px solid #F3F4F6",
+              borderRadius:0,padding:"0 0 10px 0",boxShadow:"none"}}
             onFocus={e=>{e.target.style.borderBottomColor="#6366F1";}}
             onBlur={e=>{e.target.style.borderBottomColor="#F3F4F6";}}/>
 
-          {/* ── Properties grid ── */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+          {/* ── Date + Platform ── */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:18}}>
             <FieldRow label="Date">
               <input type="date" value={form.date} onChange={sf("date")} style={inp} {...foc}/>
             </FieldRow>
@@ -1339,102 +1341,67 @@ function EditPanel(){
             </FieldRow>
           </div>
 
-          {/* ── Workflow status bar ── */}
-          <FieldRow label="Workflow status" style={{marginBottom:20}}>
-            {(() => {
-              const currentIdx = STATUS_ORDER.indexOf(form.status);
-              const progress = Math.round(((currentIdx + 1) / STATUS_ORDER.length) * 100);
-              return (
-                <>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>
-                    {STATUS_ORDER.map((s,i) => {
-                      const sm = STATUS_META[s] || STATUS_META.Draft;
-                      const isActive = form.status === s;
-                      const isDone   = STATUS_ORDER.indexOf(form.status) > i;
-                      return (
-                        <button key={s} onClick={()=>handleStatus(s)}
-                          style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",
-                            borderRadius:20,border:"1.5px solid",
-                            borderColor: isActive ? "#6366F1" : isDone ? "#86EFAC" : "#E5E7EB",
-                            background:  isActive ? "#EEF2FF" : isDone ? "#F0FDF4" : "#fff",
-                            color:       isActive ? "#4F46E5" : isDone ? "#16A34A" : "#9CA3AF",
-                            fontSize:11,fontWeight:600,cursor:"pointer",transition:"all .15s",
-                            boxShadow: isActive ? "0 0 0 3px rgba(99,102,241,.1)" : "none"}}>
-                          <span className={sm.dot} style={{width:5,height:5,borderRadius:"50%",flexShrink:0}}/>
-                          {s}
-                          {isDone && <span style={{fontSize:10}}>✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="progress-bar" style={{marginTop:10}}>
-                    <div className="progress-fill" style={{width:progress+"%"}}/>
-                  </div>
-                  <p style={{fontSize:10,color:"#9CA3AF",marginTop:5}}>{progress}% through workflow</p>
-                </>
-              );
-            })()}
-          </FieldRow>
-
-          {/* ── Divider ── */}
-          <div style={{height:1,background:"#F3F4F6",margin:"4px 0 20px"}}/>
-
-          {/* ── Checklist ── */}
-          <FieldRow label={"Production checklist (" + form.checklist.filter(i=>i.done).length + "/" + form.checklist.length + ")"} style={{marginBottom:20}}>
-            {/* Checklist progress micro-bar */}
-            <div style={{height:3,background:"#F3F4F6",borderRadius:99,overflow:"hidden",marginBottom:10,marginTop:6}}>
-              <div style={{height:"100%",borderRadius:99,background:"linear-gradient(90deg,#10B981,#34D399)",
-                width:(form.checklist.filter(i=>i.done).length/Math.max(form.checklist.length,1)*100)+"%",
-                transition:"width .3s ease"}}/>
-            </div>
-            <div style={{background:"#FAFAFA",borderRadius:10,border:"1px solid #F3F4F6",padding:"0 12px"}}>
-              {form.checklist.map((item,idx) => (
-                <div key={item.id} className="checklist-item"
-                  onClick={()=>{
-                    const updated = form.checklist.map((c,i)=>i===idx?{...c,done:!c.done}:c);
-                    setForm(f=>({...f,checklist:updated}));
-                  }}>
-                  <div className={"checklist-check"+(item.done?" done":"")}>
-                    {item.done && <Check style={{width:9,height:9,color:"#fff"}}/>}
-                  </div>
-                  <span className={"checklist-label"+(item.done?" done":"")}>{item.label}</span>
-                </div>
-              ))}
+          {/* ── Status ── */}
+          <FieldRow label="Status" style={{marginBottom:22}}>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
+              {STATUS_ORDER.map((s,i) => {
+                const sm = STATUS_META[s] || STATUS_META.Draft;
+                const isActive = form.status === s;
+                const isDone   = STATUS_ORDER.indexOf(form.status) > i;
+                return (
+                  <button key={s} onClick={()=>handleStatus(s)}
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",
+                      borderRadius:20,border:"1.5px solid",
+                      borderColor: isActive ? "#6366F1" : isDone ? "#86EFAC" : "#E5E7EB",
+                      background:  isActive ? "#EEF2FF" : isDone ? "#F0FDF4" : "#fff",
+                      color:       isActive ? "#4F46E5" : isDone ? "#16A34A" : "#9CA3AF",
+                      fontSize:12,fontWeight:600,cursor:"pointer",transition:"all .15s",
+                      boxShadow: isActive ? "0 0 0 3px rgba(99,102,241,.1)" : "none",
+                      fontFamily:"Inter,sans-serif"}}>
+                    <span className={sm.dot} style={{width:5,height:5,borderRadius:"50%",flexShrink:0}}/>
+                    {s}
+                    {isDone && <span style={{fontSize:9,marginLeft:1}}>✓</span>}
+                  </button>
+                );
+              })}
             </div>
           </FieldRow>
 
           {/* ── Divider ── */}
-          <div style={{height:1,background:"#F3F4F6",margin:"4px 0 20px"}}/>
+          <div style={{height:1,background:"#F3F4F6",margin:"0 0 22px"}}/>
 
-          {/* ── Content fields ── */}
-          <FieldRow label="Caption for approval" style={{marginBottom:14}}>
+          {/* ── Caption — most important content field, goes first ── */}
+          <FieldRow label="Caption" style={{marginBottom:18}}>
             <textarea value={form.caption} onChange={sf("caption")}
-              placeholder="Full caption copy ready for client review..." rows={5}
-              style={{...inp,resize:"none",lineHeight:1.7}} {...foc}/>
+              placeholder="Write the caption for this post..." rows={5}
+              style={{...inp,resize:"none",lineHeight:1.75}} {...foc}/>
           </FieldRow>
-          <FieldRow label="Notes & direction" style={{marginBottom:14}}>
+
+          {/* ── Notes ── */}
+          <FieldRow label="Notes" style={{marginBottom:18}}>
             <textarea value={form.notes} onChange={sf("notes")}
-              placeholder="Production notes, creative direction, context..." rows={3}
-              style={{...inp,resize:"none",lineHeight:1.7}} {...foc}/>
+              placeholder="Creative direction, production notes, context..." rows={3}
+              style={{...inp,resize:"none",lineHeight:1.75}} {...foc}/>
           </FieldRow>
-          <FieldRow label="Attached media" style={{marginBottom:14}}>
+
+          {/* ── Attached media ── */}
+          <FieldRow label="Attached media" style={{marginBottom:18}}>
             <MediaAttachment
               value={form.video_link}
               onChange={url=>setForm(f=>({...f,video_link:url}))}
             />
           </FieldRow>
-          <FieldRow label="Feedback & revisions" style={{marginBottom:14}}>
+
+          {/* ── Feedback ── */}
+          <FieldRow label="Feedback" style={{marginBottom:8}}>
             <textarea value={form.feedback} onChange={sf("feedback")}
-              placeholder="Client feedback, revision notes..." rows={3}
-              style={{...inp,resize:"none",lineHeight:1.7}} {...foc}/>
+              placeholder="Client feedback or revision notes..." rows={3}
+              style={{...inp,resize:"none",lineHeight:1.75}} {...foc}/>
           </FieldRow>
 
         </div>
-        <div style={{padding:"10px 18px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <p style={{fontSize:11,color:"#9CA3AF"}}>
-            {form.checklist.filter(i=>i.done).length} of {form.checklist.length} tasks done
-          </p>
-          <button onClick={()=>setEdit(null)} className="btn-primary" style={{fontSize:12,padding:"6px 18px"}}>Done</button>
+        <div style={{padding:"12px 20px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",justifyContent:"flex-end"}}>
+          <button onClick={()=>setEdit(null)} className="btn-primary" style={{fontSize:12,padding:"7px 20px"}}>Done</button>
         </div>
       </div>
     </>
@@ -1512,12 +1479,21 @@ function CommandPalette(){
 function detectMediaType(url) {
   if (!url) return null;
   const u = url.toLowerCase();
-  if (u.includes("youtube.com") || u.includes("youtu.be"))   return "youtube";
-  if (u.includes("drive.google.com"))                         return "gdrive";
-  if (u.includes("loom.com"))                                 return "loom";
-  if (/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/.test(u))         return "image";
-  if (/\.(mp4|mov|avi|webm|mkv)(\?|$)/.test(u))              return "video";
-  if (/\.(pdf|doc|docx|ppt|pptx)(\?|$)/.test(u))             return "doc";
+  if (u.includes("youtube.com") || u.includes("youtu.be"))          return "youtube";
+  if (u.includes("drive.google.com"))                                return "gdrive";
+  if (u.includes("loom.com"))                                        return "loom";
+  // Extension-based image detection
+  if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|#|$)/.test(u))       return "image";
+  // Common image CDN patterns (Cloudinary, S3, Imgur, Unsplash, etc.)
+  if (u.includes("res.cloudinary.com"))                              return "image";
+  if (u.includes("images.unsplash.com"))                             return "image";
+  if (u.includes("imgur.com"))                                       return "image";
+  if (u.includes("i.imgur.com"))                                     return "image";
+  if (/s3\.amazonaws\.com.*\.(jpg|jpeg|png|gif|webp)/.test(u))    return "image";
+  // Video files
+  if (/\.(mp4|mov|avi|webm|mkv)(\?|#|$)/.test(u))                 return "video";
+  // Docs
+  if (/\.(pdf|doc|docx|ppt|pptx)(\?|#|$)/.test(u))               return "doc";
   return "link";
 }
 
@@ -1551,6 +1527,7 @@ function MediaAttachment({ value, onChange }) {
   const [showInput, setShowInput]   = useState(!value);
   const [copied, setCopied]         = useState(false);
   const [imgError, setImgError]     = useState(false);
+  const [urlError, setUrlError]     = useState(false);  // shows inline error on bad paste
   const inputRef = useRef(null);
 
   // Keep in sync if external value changes (e.g. loading a post)
@@ -1558,6 +1535,7 @@ function MediaAttachment({ value, onChange }) {
     setInputVal(value || "");
     setShowInput(!value);
     setImgError(false);
+    setUrlError(false);
   }, [value]);
 
   const type = detectMediaType(value);
@@ -1565,10 +1543,11 @@ function MediaAttachment({ value, onChange }) {
   const validUrl = normUrl(value);
 
   function handlePaste(e) {
-    // Auto-submit on paste
+    // Auto-submit on paste — most common workflow
     const pasted = e.clipboardData?.getData("text") || "";
     const cleaned = normUrl(pasted.trim());
     if (cleaned) {
+      setUrlError(false);
       setInputVal(cleaned);
       onChange(cleaned);
       setShowInput(false);
@@ -1576,16 +1555,24 @@ function MediaAttachment({ value, onChange }) {
   }
 
   function handleInputChange(e) {
+  function handleInputChange(e) {
+    setUrlError(false);
     setInputVal(e.target.value);
   }
 
   function handleInputBlur() {
     const cleaned = normUrl(inputVal.trim());
     if (cleaned) {
+      setUrlError(false);
       onChange(cleaned);
       setShowInput(false);
     } else if (!inputVal.trim()) {
-      setShowInput(!value);
+      // Empty — hide input and show existing card or empty state
+      setUrlError(false);
+      setShowInput(false);
+    } else {
+      // User typed something invalid — show error, don't silently revert
+      setUrlError(true);
     }
   }
 
@@ -1595,6 +1582,7 @@ function MediaAttachment({ value, onChange }) {
       handleInputBlur();
     }
     if (e.key === "Escape") {
+      setUrlError(false);
       setShowInput(false);
       setInputVal(value || "");
     }
@@ -1632,36 +1620,38 @@ function MediaAttachment({ value, onChange }) {
   if (showInput || !value) {
     return (
       <div>
-        <div style={{position:"relative"}}>
-          <input
-            ref={inputRef}
-            value={inputVal}
-            onChange={handleInputChange}
-            onBlur={handleInputBlur}
-            onKeyDown={handleInputKeyDown}
-            onPaste={handlePaste}
-            placeholder="Paste a YouTube, Drive, image, or asset link..."
-            style={{width:"100%",background:"#fff",border:"1.5px solid #6366F1",borderRadius:8,
-              padding:"9px 12px",fontSize:13,color:"#111827",fontFamily:"Inter,sans-serif",
-              outline:"none",boxShadow:"0 0 0 3px rgba(99,102,241,.1)"}}
-            autoFocus
-          />
-        </div>
-        <div style={{display:"flex",gap:12,marginTop:8,padding:"0 2px"}}>
-          {[
-            {icon:"▶", label:"YouTube"},
-            {icon:"📁", label:"Drive"},
-            {icon:"🖼", label:"Image URL"},
-            {icon:"🔗", label:"Any link"},
-          ].map(ex=>(
-            <span key={ex.label} style={{fontSize:10,color:"#9CA3AF",display:"flex",alignItems:"center",gap:3}}>
-              <span>{ex.icon}</span>{ex.label}
-            </span>
-          ))}
-        </div>
-        {value && (
-          <button onClick={() => { setShowInput(false); setInputVal(value); }}
-            className="btn-ghost" style={{marginTop:6,fontSize:11,color:"#9CA3AF"}}>
+        <input
+          ref={inputRef}
+          value={inputVal}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
+          onPaste={handlePaste}
+          placeholder="Paste a YouTube, Drive, image, or asset link..."
+          style={{width:"100%",background:"#fff",
+            border: urlError ? "1.5px solid #EF4444" : "1.5px solid #6366F1",
+            borderRadius:8,padding:"9px 12px",fontSize:13,color:"#111827",
+            fontFamily:"Inter,sans-serif",outline:"none",
+            boxShadow: urlError
+              ? "0 0 0 3px rgba(239,68,68,.1)"
+              : "0 0 0 3px rgba(99,102,241,.1)"}}
+          autoFocus
+        />
+        {urlError && (
+          <p style={{fontSize:11,color:"#EF4444",marginTop:5}}>
+            That doesn't look like a valid URL. Try pasting the full link.
+          </p>
+        )}
+        {!urlError && (
+          <div style={{display:"flex",gap:14,marginTop:7,padding:"0 1px"}}>
+            {["▶ YouTube","📁 Drive","🖼 Image","🔗 Link"].map(ex=>(
+              <span key={ex} style={{fontSize:10,color:"#9CA3AF"}}>{ex}</span>
+            ))}
+          </div>
+        )}
+        {value && !urlError && (
+          <button onClick={() => { setShowInput(false); setInputVal(value); setUrlError(false); }}
+            className="btn-ghost" style={{marginTop:5,fontSize:11,color:"#9CA3AF"}}>
             Cancel
           </button>
         )}
@@ -1672,50 +1662,101 @@ function MediaAttachment({ value, onChange }) {
   // ── Attachment card state ────────────────────────────────────────────────
   const ytThumb = type === "youtube" ? getYouTubeThumbnail(value) : null;
   const domain  = getDomain(value);
+  const isImageType = (type === "image" || type === "youtube");
 
   return (
     <div className="media-card">
-      {/* Preview area */}
-      <div className="media-card-preview">
-        {type === "youtube" && ytThumb && !imgError ? (
-          <>
-            <img src={ytThumb} alt="YouTube thumbnail"
-              onError={() => setImgError(true)}
-              style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
-            {/* Play overlay */}
-            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.25)"}}>
-              <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,.9)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <Play style={{width:14,height:14,color:"#EF4444",marginLeft:2}}/>
-              </div>
-            </div>
-          </>
-        ) : type === "image" && !imgError ? (
-          <img src={value} alt="Attached image"
+
+      {/* ── Visual preview ── */}
+      {type === "youtube" && ytThumb && !imgError ? (
+        // YouTube: thumbnail with play button overlay
+        <div style={{position:"relative",borderRadius:"10px 10px 0 0",overflow:"hidden",lineHeight:0}}>
+          <img src={ytThumb} alt="YouTube thumbnail"
             onError={() => setImgError(true)}
-            style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
-        ) : (
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
-            <div style={{width:40,height:40,borderRadius:10,background:meta?.bg||"#F3F4F6",
-              display:"flex",alignItems:"center",justifyContent:"center"}}>
-              {meta && React.createElement(meta.icon,{style:{width:18,height:18,color:meta.color}})}
+            style={{width:"100%",display:"block",objectFit:"cover",maxHeight:180}}/>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",
+            justifyContent:"center",background:"rgba(0,0,0,.22)"}}>
+            <div style={{width:40,height:40,borderRadius:"50%",
+              background:"rgba(255,255,255,.92)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              boxShadow:"0 2px 12px rgba(0,0,0,.18)"}}>
+              <Play style={{width:15,height:15,color:"#EF4444",marginLeft:2}}/>
             </div>
-            <span style={{fontSize:11,fontWeight:600,color:"#6B7280"}}>{meta?.label||"Asset"}</span>
           </div>
-        )}
-      </div>
+        </div>
+      ) : type === "image" && !imgError ? (
+        // Image: natural height, no cropping, rounded top corners
+        <div style={{borderRadius:"10px 10px 0 0",overflow:"hidden",
+          background:"#F9FAFB",lineHeight:0,
+          borderBottom:"1px solid #F3F4F6"}}>
+          <img
+            src={value}
+            alt="Attached image"
+            onError={() => setImgError(true)}
+            style={{
+              width:"100%",
+              maxHeight:260,
+              objectFit:"contain",  // no cropping — show full image
+              display:"block",
+              background:"#F9FAFB",
+            }}
+          />
+        </div>
+      ) : (
+        // Non-image: compact icon card
+        <div style={{display:"flex",alignItems:"center",gap:12,
+          padding:"14px 14px",borderBottom:"1px solid #F3F4F6"}}>
+          <div style={{width:38,height:38,borderRadius:9,
+            background:meta?.bg||"#F3F4F6",flexShrink:0,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {meta && React.createElement(meta.icon,{style:{width:18,height:18,color:meta.color}})}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <p style={{fontSize:13,fontWeight:600,color:"#111827",
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {meta?.label || "Attached file"}
+            </p>
+            <p style={{fontSize:11,color:"#9CA3AF",marginTop:2,
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {domain || value.slice(0,48)}
+            </p>
+          </div>
+        </div>
+      )}
 
-      {/* Info row */}
-      <div className="media-card-body">
-        <p style={{fontSize:12,fontWeight:600,color:"#111827",marginBottom:2,
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {meta?.label || "Attached file"}
-        </p>
-        <p style={{fontSize:10,color:"#9CA3AF",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {domain || value.slice(0,40)}
-        </p>
-      </div>
+      {/* ── Info row (for image/youtube — non-image has it inline above) ── */}
+      {isImageType && !imgError && (
+        <div style={{padding:"9px 12px",borderBottom:"1px solid #F3F4F6"}}>
+          <p style={{fontSize:11,fontWeight:600,color:"#374151",
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {meta?.label || "Image"}
+          </p>
+          <p style={{fontSize:10,color:"#9CA3AF",marginTop:1,
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {domain || value.slice(0,48)}
+          </p>
+        </div>
+      )}
 
-      {/* Action buttons */}
+      {/* ── Fallback info when image fails to load ── */}
+      {imgError && (
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",
+          borderBottom:"1px solid #F3F4F6"}}>
+          <div style={{width:36,height:36,borderRadius:8,background:"#FEF2F2",
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <AlertCircle style={{width:16,height:16,color:"#EF4444"}}/>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <p style={{fontSize:12,fontWeight:600,color:"#374151"}}>Preview unavailable</p>
+            <p style={{fontSize:10,color:"#9CA3AF",marginTop:2,
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {domain || value.slice(0,48)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Action buttons ── */}
       <div className="media-card-actions">
         <a href={validUrl} target="_blank" rel="noreferrer" className="media-btn primary"
           style={{textDecoration:"none"}}>
@@ -1791,4 +1832,4 @@ function ErrBanner(){
       <button onClick={()=>setErr("")} className="btn-ghost" style={{padding:3,color:"#EF4444",flexShrink:0}}><X style={{width:11,height:11}}/></button>
     </div>
   );
-}
+}}
