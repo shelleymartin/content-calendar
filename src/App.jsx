@@ -13,6 +13,7 @@ import {
   Loader2, Menu, Pencil, Plus, Search,
   Trash2, Upload, X, Zap,
   Columns, Target, Home, GripVertical,
+  Link, Copy, Play, Image, Film, BookOpen,
 } from "lucide-react";
 import { supabase, supabaseConfigError } from "./lib/supabase";
 
@@ -69,10 +70,27 @@ _s.textContent = [
   ".tag-approved { background:#ECFDF5; color:#065F46; border-color:#A7F3D0; }",
   ".tag-scheduled { background:#FFFBEB; color:#92400E; border-color:#FCD34D; }",
   ".tag-posted { background:#EEF2FF; color:#3730A3; border-color:#C7D2FE; }",
+  ".tag-review { background:#FFF7ED; color:#92400E; border-color:#FED7AA; }",
   ".dot-draft { background:#9CA3AF; flex-shrink:0; }",
+  ".dot-review { background:#F97316; flex-shrink:0; }",
   ".dot-approved { background:#10B981; flex-shrink:0; }",
   ".dot-scheduled { background:#F59E0B; flex-shrink:0; }",
   ".dot-posted { background:#6366F1; flex-shrink:0; }",
+  ".checklist-item { display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid #F9FAFB; cursor:pointer; transition:background .1s; }",
+  ".checklist-item:last-child { border-bottom:none; }",
+  ".checklist-item:hover { background:#F9FAFB; }",
+  ".checklist-check { width:16px; height:16px; border-radius:4px; border:1.5px solid #D1D5DB; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }",
+  ".checklist-check.done { background:#6366F1; border-color:#6366F1; }",
+  ".checklist-label { font-size:12px; color:#374151; flex:1; line-height:1.4; }",
+  ".checklist-label.done { text-decoration:line-through; color:#9CA3AF; }",
+  ".status-flow { display:flex; align-items:center; gap:0; margin-top:4px; }",
+  ".status-step { display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:0; font-size:11px; font-weight:600; cursor:pointer; border:1px solid #E5E7EB; background:#fff; color:#6B7280; transition:all .12s; position:relative; }",
+  ".status-step:first-child { border-radius:8px 0 0 8px; }",
+  ".status-step:last-child { border-radius:0 8px 8px 0; }",
+  ".status-step.active { background:#EEF2FF; color:#4F46E5; border-color:#6366F1; z-index:1; }",
+  ".status-step.done { background:#F0FDF4; color:#16A34A; border-color:#86EFAC; }",
+  ".progress-bar { height:4px; background:#F3F4F6; border-radius:99px; overflow:hidden; margin-top:8px; }",
+  ".progress-fill { height:100%; background:linear-gradient(90deg,#6366F1,#8B5CF6); border-radius:99px; transition:width .5s ease; }",
   ".overlay { position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.16); backdrop-filter:blur(3px); }",
   ".cmd-wrap { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; background:rgba(0,0,0,.22); backdrop-filter:blur(4px); }",
   ".cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); width:100%; min-width:0; overflow:hidden; }",
@@ -105,19 +123,50 @@ _s.textContent = [
   ".k-grip { color:#D1D5DB; flex-shrink:0; cursor:grab; transition:color .1s; }",
   ".k-card:hover .k-grip { color:#9CA3AF; }",
   ".k-drop-ph { height:56px; border:2px dashed #C7D2FE; border-radius:10px; background:#EEF2FF; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#A5B4FC; animation:dropPulse 1s ease infinite; }",
+  ".media-card { background:#F9FAFB; border:1.5px solid #E5E7EB; border-radius:10px; overflow:hidden; transition:border-color .15s,box-shadow .15s; }",
+  ".media-card:hover { border-color:#C7D2FE; box-shadow:0 2px 10px rgba(99,102,241,.08); }",
+  ".media-card-preview { width:100%; height:120px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#F0F4FF,#EEF2FF); border-bottom:1px solid #E5E7EB; position:relative; overflow:hidden; }",
+  ".media-card-body { padding:10px 12px; }",
+  ".media-card-actions { display:flex; gap:6px; padding:8px 12px; border-top:1px solid #F3F4F6; background:#FAFAFA; }",
+  ".media-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid #E5E7EB; background:#fff; color:#374151; transition:all .12s; font-family:Inter,sans-serif; white-space:nowrap; }",
+  ".media-btn:hover { background:#F3F4F6; border-color:#D1D5DB; }",
+  ".media-btn.primary { background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE; }",
+  ".media-btn.primary:hover { background:#E0E7FF; }",
+  ".media-btn.danger { background:#FEF2F2; color:#DC2626; border-color:#FECACA; }",
+  ".media-btn.danger:hover { background:#FEE2E2; }",
+  ".media-empty { border:1.5px dashed #E5E7EB; border-radius:10px; padding:20px; text-align:center; cursor:pointer; transition:all .15s; }",
+  ".media-empty:hover { border-color:#A5B4FC; background:#F5F7FF; }",
+  ".media-input-wrap { position:relative; margin-top:10px; }",
+  ".copy-confirm { position:absolute; top:-28px; right:0; background:#111827; color:#fff; font-size:10px; padding:3px 8px; border-radius:5px; pointer-events:none; white-space:nowrap; }",
 ].join("\n");
 document.head.appendChild(_s);
 }
 
-const STATUSES = ["Draft","Approved","Scheduled","Posted"];
+const STATUSES = ["Draft","In Review","Approved","Scheduled","Posted"];
 const PLATFORMS = ["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
 
 const STATUS_META = {
-  Draft:     { tagCls:"tag-draft",     dot:"dot-draft"     },
-  Approved:  { tagCls:"tag-approved",  dot:"dot-approved"  },
-  Scheduled: { tagCls:"tag-scheduled", dot:"dot-scheduled" },
-  Posted:    { tagCls:"tag-posted",    dot:"dot-posted"    },
+  Draft:      { tagCls:"tag-draft",      dot:"dot-draft",      label:"Draft"      },
+  "In Review":{ tagCls:"tag-review",     dot:"dot-review",     label:"In Review"  },
+  Approved:   { tagCls:"tag-approved",   dot:"dot-approved",   label:"Approved"   },
+  Scheduled:  { tagCls:"tag-scheduled",  dot:"dot-scheduled",  label:"Scheduled"  },
+  Posted:     { tagCls:"tag-posted",     dot:"dot-posted",     label:"Posted"     },
 };
+
+// Workflow order for status progression
+const STATUS_ORDER = ["Draft","In Review","Approved","Scheduled","Posted"];
+
+// Content checklist defaults — shown in the detail drawer
+const DEFAULT_CHECKLIST = [
+  { id:"caption",   label:"Caption written",   done:false },
+  { id:"creative",  label:"Creative ready",    done:false },
+  { id:"reviewed",  label:"Reviewed",          done:false },
+  { id:"approved",  label:"Client approved",   done:false },
+  { id:"hashtags",  label:"Hashtags added",    done:false },
+  { id:"links",     label:"Links checked",     done:false },
+  { id:"scheduled", label:"Scheduled in app",  done:false },
+  { id:"qa",        label:"Final QA done",     done:false },
+];
 
 const PLATFORM_META = {
   Instagram: { emoji:"📷" },
@@ -257,7 +306,7 @@ export default function App() {
   }
   async function addPost(post){
     if(!supabase)return;
-    const payload={title:post.title,date:post.date,platform:post.platform,status:post.status||"Draft",caption:post.caption||"",notes:post.notes||"",video_link:normUrl(post.video_link||""),feedback:post.feedback||"",updated_at:new Date().toISOString()};
+    const payload={title:post.title,date:post.date,platform:post.platform,status:post.status||"Draft",caption:post.caption||"",notes:post.notes||"",video_link:normUrl(post.video_link||""),feedback:post.feedback||"",checklist:post.checklist??[],updated_at:new Date().toISOString()};
     const{data,error}=await supabase.from("posts").insert([payload]).select();
     if(error){setErr(error.message);return;}
     if(data?.[0])await notif('"'+data[0].title+'" added.',"success",data[0].id);
@@ -265,7 +314,7 @@ export default function App() {
   }
   async function updatePost(id,fields){
     if(!supabase)return false;
-    const payload={title:fields.title,date:fields.date,platform:fields.platform,status:fields.status,notes:fields.notes||"",video_link:normUrl(fields.video_link||""),caption:fields.caption||"",feedback:fields.feedback||"",updated_at:new Date().toISOString()};
+    const payload={title:fields.title,date:fields.date,platform:fields.platform,status:fields.status,notes:fields.notes||"",video_link:normUrl(fields.video_link||""),caption:fields.caption||"",feedback:fields.feedback||"",checklist:fields.checklist??[],updated_at:new Date().toISOString()};
     const{data,error}=await supabase.from("posts").update(payload).eq("id",id).select();
     if(error){setErr(error.message);return false;}
     if(data?.[0])await notif('"'+data[0].title+'" updated.',"info",data[0].id);
@@ -276,7 +325,8 @@ export default function App() {
   async function deletePost(id){
     if(!supabase)return;
     const post=db.posts.find(p=>String(p.id)===String(id));
-    await supabase.from("posts").delete().eq("id",id);
+    const{error}=await supabase.from("posts").delete().eq("id",id);
+    if(error){setErr(error.message);return;}
     if(post)await notif('"'+post.title+'" deleted.',"warning",id);
     setEdit(prev=>prev?.id===id?null:prev);
     await fetchAll(false);
@@ -301,12 +351,13 @@ export default function App() {
 
   async function addIdea(text){
     if(!supabase||!text.trim())return;
-    await supabase.from("ideas").insert([{title:text.trim(),platform:"Instagram",notes:"",status:"Idea",updated_at:new Date().toISOString()}]);
+    const{error}=await supabase.from("ideas").insert([{title:text.trim(),platform:"Instagram",notes:"",status:"Idea",updated_at:new Date().toISOString()}]);
+    if(error){setErr(error.message);return;}
     await fetchAll(false);
   }
   async function convertIdea(idea){
     if(!supabase)return;
-    const{data,error}=await supabase.from("posts").insert([{title:idea.title||"Untitled",date:fmt(new Date()),platform:idea.platform||"Instagram",status:"Draft",caption:idea.notes||"",notes:"",video_link:"",feedback:"",updated_at:new Date().toISOString()}]).select();
+    const{data,error}=await supabase.from("posts").insert([{title:idea.title||"Untitled",date:fmt(new Date()),platform:idea.platform||"Instagram",status:"Draft",caption:idea.notes||"",notes:"",video_link:"",feedback:"",checklist:DEFAULT_CHECKLIST.map(i=>({...i})),updated_at:new Date().toISOString()}]).select();
     if(error){setErr(error.message);return;}
     await supabase.from("ideas").delete().eq("id",idea.id);
     await notif('Post from idea: "'+idea.title+'"',"success",data?.[0]?.id||null);
@@ -314,7 +365,8 @@ export default function App() {
   }
   async function addVault(text){
     if(!supabase||!text.trim())return;
-    await supabase.from("vault").insert([{title:"Saved Content",platform:"General",content:text.trim(),media_url:"",tags:"",updated_at:new Date().toISOString()}]);
+    const{error}=await supabase.from("vault").insert([{title:"Saved Content",platform:"General",content:text.trim(),media_url:"",tags:"",updated_at:new Date().toISOString()}]);
+    if(error){setErr(error.message);return;}
     await fetchAll(false);
   }
   async function deleteVault(id){
@@ -1177,7 +1229,7 @@ function QuickAddBar(){
   async function submit(){
     if(!title.trim()||saving)return;
     setSaving(true);
-    await addPost({title:title.trim(),date,platform,status:"Draft",caption:"",notes:"",video_link:"",feedback:""});
+    await addPost({title:title.trim(),date,platform,status:"Draft",caption:"",notes:"",video_link:"",feedback:"",checklist:DEFAULT_CHECKLIST.map(i=>({...i}))});
     setSaving(false);setQA(false);
   }
   const inp={background:"#fff",border:"1px solid #E5E7EB",borderRadius:7,padding:"6px 10px",fontSize:13,color:"#111827",fontFamily:"Inter,sans-serif",outline:"none"};
@@ -1207,10 +1259,18 @@ function EditPanel(){
     platform:post.platform||"Instagram",status:post.status||"Draft",
     notes:post.notes||"",video_link:post.video_link||"",
     caption:post.caption||"",feedback:post.feedback||"",
+    checklist: Array.isArray(post.checklist) && post.checklist.length > 0
+      ? post.checklist
+      : DEFAULT_CHECKLIST.map(i=>({...i})),
   });
   const[saveState,setSaveState]=useState("idle");
   const timer=useRef(null);
   const isFirst=useRef(true);
+
+  // Sync form.status if the post is updated externally (e.g. drag-and-drop while panel is open)
+  useEffect(()=>{
+    setForm(f=>f.status!==post.status ? {...f,status:post.status} : f);
+  },[post.status]);
 
   useEffect(()=>{
     if(isFirst.current){isFirst.current=false;return;}
@@ -1259,38 +1319,122 @@ function EditPanel(){
           <Zap style={{width:9,height:9,color:"#8B5CF6"}}/>
           <p style={{fontSize:10,color:"#7C3AED",fontWeight:500}}>Auto-saves 1.5s after you stop typing</p>
         </div>
-        <div style={{flex:1,overflowY:"auto",padding:"18px 16px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"20px 18px"}}>
+
+          {/* ── Title ── */}
           <input value={form.title} onChange={sf("title")} placeholder="Post title"
-            style={{...inp,fontSize:18,fontWeight:700,marginBottom:18,letterSpacing:"-0.2px"}} {...foc}/>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-            <FieldRow label="Date"><input type="date" value={form.date} onChange={sf("date")} style={inp} {...foc}/></FieldRow>
+            style={{...inp,fontSize:19,fontWeight:700,marginBottom:20,letterSpacing:"-0.3px",border:"none",borderBottom:"2px solid #F3F4F6",borderRadius:0,padding:"0 0 10px 0",boxShadow:"none"}}
+            onFocus={e=>{e.target.style.borderBottomColor="#6366F1";}}
+            onBlur={e=>{e.target.style.borderBottomColor="#F3F4F6";}}/>
+
+          {/* ── Properties grid ── */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+            <FieldRow label="Date">
+              <input type="date" value={form.date} onChange={sf("date")} style={inp} {...foc}/>
+            </FieldRow>
             <FieldRow label="Platform">
               <select value={form.platform} onChange={sf("platform")} style={inp} {...foc}>
                 {PLATFORMS.map(p=><option key={p} value={p}>{PLATFORM_META[p]?.emoji} {p}</option>)}
               </select>
             </FieldRow>
           </div>
-          <FieldRow label="Status" style={{marginBottom:14}}>
-            <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:4}}>
-              {STATUSES.map(s=>{
-                const sm=STATUS_META[s],active=form.status===s;
-                return(
-                  <button key={s} onClick={()=>handleStatus(s)}
-                    style={{display:"flex",alignItems:"center",gap:4,padding:"4px 12px",borderRadius:20,border:"1.5px solid",borderColor:active?"#6366F1":"#E5E7EB",background:active?"#EEF2FF":"#fff",color:active?"#6366F1":"#6B7280",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.12s",boxShadow:active?"0 0 0 3px rgba(99,102,241,.1)":"none"}}>
-                    <span className={sm.dot} style={{width:5,height:5,borderRadius:"50%"}}/>{s}
-                  </button>
-                );
-              })}
+
+          {/* ── Workflow status bar ── */}
+          <FieldRow label="Workflow status" style={{marginBottom:20}}>
+            {(() => {
+              const currentIdx = STATUS_ORDER.indexOf(form.status);
+              const progress = Math.round(((currentIdx + 1) / STATUS_ORDER.length) * 100);
+              return (
+                <>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>
+                    {STATUS_ORDER.map((s,i) => {
+                      const sm = STATUS_META[s] || STATUS_META.Draft;
+                      const isActive = form.status === s;
+                      const isDone   = STATUS_ORDER.indexOf(form.status) > i;
+                      return (
+                        <button key={s} onClick={()=>handleStatus(s)}
+                          style={{display:"flex",alignItems:"center",gap:5,padding:"5px 11px",
+                            borderRadius:20,border:"1.5px solid",
+                            borderColor: isActive ? "#6366F1" : isDone ? "#86EFAC" : "#E5E7EB",
+                            background:  isActive ? "#EEF2FF" : isDone ? "#F0FDF4" : "#fff",
+                            color:       isActive ? "#4F46E5" : isDone ? "#16A34A" : "#9CA3AF",
+                            fontSize:11,fontWeight:600,cursor:"pointer",transition:"all .15s",
+                            boxShadow: isActive ? "0 0 0 3px rgba(99,102,241,.1)" : "none"}}>
+                          <span className={sm.dot} style={{width:5,height:5,borderRadius:"50%",flexShrink:0}}/>
+                          {s}
+                          {isDone && <span style={{fontSize:10}}>✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="progress-bar" style={{marginTop:10}}>
+                    <div className="progress-fill" style={{width:progress+"%"}}/>
+                  </div>
+                  <p style={{fontSize:10,color:"#9CA3AF",marginTop:5}}>{progress}% through workflow</p>
+                </>
+              );
+            })()}
+          </FieldRow>
+
+          {/* ── Divider ── */}
+          <div style={{height:1,background:"#F3F4F6",margin:"4px 0 20px"}}/>
+
+          {/* ── Checklist ── */}
+          <FieldRow label={"Production checklist (" + form.checklist.filter(i=>i.done).length + "/" + form.checklist.length + ")"} style={{marginBottom:20}}>
+            {/* Checklist progress micro-bar */}
+            <div style={{height:3,background:"#F3F4F6",borderRadius:99,overflow:"hidden",marginBottom:10,marginTop:6}}>
+              <div style={{height:"100%",borderRadius:99,background:"linear-gradient(90deg,#10B981,#34D399)",
+                width:(form.checklist.filter(i=>i.done).length/Math.max(form.checklist.length,1)*100)+"%",
+                transition:"width .3s ease"}}/>
+            </div>
+            <div style={{background:"#FAFAFA",borderRadius:10,border:"1px solid #F3F4F6",padding:"0 12px"}}>
+              {form.checklist.map((item,idx) => (
+                <div key={item.id} className="checklist-item"
+                  onClick={()=>{
+                    const updated = form.checklist.map((c,i)=>i===idx?{...c,done:!c.done}:c);
+                    setForm(f=>({...f,checklist:updated}));
+                  }}>
+                  <div className={"checklist-check"+(item.done?" done":"")}>
+                    {item.done && <Check style={{width:9,height:9,color:"#fff"}}/>}
+                  </div>
+                  <span className={"checklist-label"+(item.done?" done":"")}>{item.label}</span>
+                </div>
+              ))}
             </div>
           </FieldRow>
-          <div style={{height:1,background:"#F3F4F6",margin:"2px 0 16px"}}/>
-          <FieldRow label="Notes" style={{marginBottom:12}}><textarea value={form.notes} onChange={sf("notes")} placeholder="Production notes, direction, context..." rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
-          <FieldRow label="Video Link" style={{marginBottom:12}}><input value={form.video_link} onChange={sf("video_link")} placeholder="https://drive.google.com/..." style={inp} {...foc}/></FieldRow>
-          <FieldRow label="Caption for Approval" style={{marginBottom:12}}><textarea value={form.caption} onChange={sf("caption")} placeholder="Full caption copy for client review..." rows={5} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
-          <FieldRow label="Feedback / Revisions" style={{marginBottom:12}}><textarea value={form.feedback} onChange={sf("feedback")} placeholder="Client feedback or revision notes..." rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
+
+          {/* ── Divider ── */}
+          <div style={{height:1,background:"#F3F4F6",margin:"4px 0 20px"}}/>
+
+          {/* ── Content fields ── */}
+          <FieldRow label="Caption for approval" style={{marginBottom:14}}>
+            <textarea value={form.caption} onChange={sf("caption")}
+              placeholder="Full caption copy ready for client review..." rows={5}
+              style={{...inp,resize:"none",lineHeight:1.7}} {...foc}/>
+          </FieldRow>
+          <FieldRow label="Notes & direction" style={{marginBottom:14}}>
+            <textarea value={form.notes} onChange={sf("notes")}
+              placeholder="Production notes, creative direction, context..." rows={3}
+              style={{...inp,resize:"none",lineHeight:1.7}} {...foc}/>
+          </FieldRow>
+          <FieldRow label="Attached media" style={{marginBottom:14}}>
+            <MediaAttachment
+              value={form.video_link}
+              onChange={url=>setForm(f=>({...f,video_link:url}))}
+            />
+          </FieldRow>
+          <FieldRow label="Feedback & revisions" style={{marginBottom:14}}>
+            <textarea value={form.feedback} onChange={sf("feedback")}
+              placeholder="Client feedback, revision notes..." rows={3}
+              style={{...inp,resize:"none",lineHeight:1.7}} {...foc}/>
+          </FieldRow>
+
         </div>
-        <div style={{padding:"10px 16px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",justifyContent:"flex-end"}}>
-          <button onClick={()=>setEdit(null)} className="btn-primary" style={{fontSize:12,padding:"6px 16px"}}>Done</button>
+        <div style={{padding:"10px 18px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <p style={{fontSize:11,color:"#9CA3AF"}}>
+            {form.checklist.filter(i=>i.done).length} of {form.checklist.length} tasks done
+          </p>
+          <button onClick={()=>setEdit(null)} className="btn-primary" style={{fontSize:12,padding:"6px 18px"}}>Done</button>
         </div>
       </div>
     </>
@@ -1360,6 +1504,240 @@ function CommandPalette(){
     </div>
   );
 }
+
+// ─── Media Attachment Component ───────────────────────────────────────────────
+// Detects media type, shows preview card, one-click open/copy/remove.
+// Keeps the existing video_link data model — just upgrades the UX.
+
+function detectMediaType(url) {
+  if (!url) return null;
+  const u = url.toLowerCase();
+  if (u.includes("youtube.com") || u.includes("youtu.be"))   return "youtube";
+  if (u.includes("drive.google.com"))                         return "gdrive";
+  if (u.includes("loom.com"))                                 return "loom";
+  if (/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/.test(u))         return "image";
+  if (/\.(mp4|mov|avi|webm|mkv)(\?|$)/.test(u))              return "video";
+  if (/\.(pdf|doc|docx|ppt|pptx)(\?|$)/.test(u))             return "doc";
+  return "link";
+}
+
+function getMediaMeta(url) {
+  const type = detectMediaType(url);
+  const meta = {
+    youtube:  { label:"YouTube video",      icon:Play,      color:"#EF4444", bg:"#FEF2F2",   canPreview:true  },
+    gdrive:   { label:"Google Drive file",  icon:BookOpen,  color:"#1A73E8", bg:"#EFF6FF",   canPreview:false },
+    loom:     { label:"Loom recording",     icon:Film,      color:"#8B5CF6", bg:"#F5F3FF",   canPreview:false },
+    image:    { label:"Image",              icon:Image,     color:"#10B981", bg:"#ECFDF5",   canPreview:true  },
+    video:    { label:"Video file",         icon:Film,      color:"#F97316", bg:"#FFF7ED",   canPreview:false },
+    doc:      { label:"Document",           icon:FileText,  color:"#6366F1", bg:"#EEF2FF",   canPreview:false },
+    link:     { label:"Asset link",         icon:Link,      color:"#6B7280", bg:"#F3F4F6",   canPreview:false },
+  };
+  return type ? meta[type] : null;
+}
+
+function getYouTubeThumbnail(url) {
+  // Extract video id from various YouTube URL formats
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg` : null;
+}
+
+function getDomain(url) {
+  try { return new URL(url).hostname.replace("www.", ""); }
+  catch { return ""; }
+}
+
+function MediaAttachment({ value, onChange }) {
+  const [inputVal, setInputVal]     = useState(value || "");
+  const [showInput, setShowInput]   = useState(!value);
+  const [copied, setCopied]         = useState(false);
+  const [imgError, setImgError]     = useState(false);
+  const inputRef = useRef(null);
+
+  // Keep in sync if external value changes (e.g. loading a post)
+  useEffect(() => {
+    setInputVal(value || "");
+    setShowInput(!value);
+    setImgError(false);
+  }, [value]);
+
+  const type = detectMediaType(value);
+  const meta = getMediaMeta(value);
+  const validUrl = normUrl(value);
+
+  function handlePaste(e) {
+    // Auto-submit on paste
+    const pasted = e.clipboardData?.getData("text") || "";
+    const cleaned = normUrl(pasted.trim());
+    if (cleaned) {
+      setInputVal(cleaned);
+      onChange(cleaned);
+      setShowInput(false);
+    }
+  }
+
+  function handleInputChange(e) {
+    setInputVal(e.target.value);
+  }
+
+  function handleInputBlur() {
+    const cleaned = normUrl(inputVal.trim());
+    if (cleaned) {
+      onChange(cleaned);
+      setShowInput(false);
+    } else if (!inputVal.trim()) {
+      setShowInput(!value);
+    }
+  }
+
+  function handleInputKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleInputBlur();
+    }
+    if (e.key === "Escape") {
+      setShowInput(false);
+      setInputVal(value || "");
+    }
+  }
+
+  function handleCopy() {
+    if (!validUrl) return;
+    navigator.clipboard.writeText(validUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  }
+
+  function handleRemove() {
+    onChange("");
+    setInputVal("");
+    setShowInput(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  // ── Empty state ──────────────────────────────────────────────────────────
+  if (!value && !showInput) {
+    return (
+      <div className="media-empty" onClick={() => { setShowInput(true); setTimeout(() => inputRef.current?.focus(), 50); }}>
+        <div style={{width:32,height:32,borderRadius:8,background:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}>
+          <Link style={{width:14,height:14,color:"#9CA3AF"}}/>
+        </div>
+        <p style={{fontSize:12,fontWeight:600,color:"#6B7280",marginBottom:3}}>Attach media or asset</p>
+        <p style={{fontSize:11,color:"#9CA3AF"}}>YouTube, Google Drive, image URL, video file</p>
+      </div>
+    );
+  }
+
+  // ── Input state ──────────────────────────────────────────────────────────
+  if (showInput || !value) {
+    return (
+      <div>
+        <div style={{position:"relative"}}>
+          <input
+            ref={inputRef}
+            value={inputVal}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            onPaste={handlePaste}
+            placeholder="Paste a YouTube, Drive, image, or asset link..."
+            style={{width:"100%",background:"#fff",border:"1.5px solid #6366F1",borderRadius:8,
+              padding:"9px 12px",fontSize:13,color:"#111827",fontFamily:"Inter,sans-serif",
+              outline:"none",boxShadow:"0 0 0 3px rgba(99,102,241,.1)"}}
+            autoFocus
+          />
+        </div>
+        <div style={{display:"flex",gap:12,marginTop:8,padding:"0 2px"}}>
+          {[
+            {icon:"▶", label:"YouTube"},
+            {icon:"📁", label:"Drive"},
+            {icon:"🖼", label:"Image URL"},
+            {icon:"🔗", label:"Any link"},
+          ].map(ex=>(
+            <span key={ex.label} style={{fontSize:10,color:"#9CA3AF",display:"flex",alignItems:"center",gap:3}}>
+              <span>{ex.icon}</span>{ex.label}
+            </span>
+          ))}
+        </div>
+        {value && (
+          <button onClick={() => { setShowInput(false); setInputVal(value); }}
+            className="btn-ghost" style={{marginTop:6,fontSize:11,color:"#9CA3AF"}}>
+            Cancel
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // ── Attachment card state ────────────────────────────────────────────────
+  const ytThumb = type === "youtube" ? getYouTubeThumbnail(value) : null;
+  const domain  = getDomain(value);
+
+  return (
+    <div className="media-card">
+      {/* Preview area */}
+      <div className="media-card-preview">
+        {type === "youtube" && ytThumb && !imgError ? (
+          <>
+            <img src={ytThumb} alt="YouTube thumbnail"
+              onError={() => setImgError(true)}
+              style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+            {/* Play overlay */}
+            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.25)"}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,.9)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <Play style={{width:14,height:14,color:"#EF4444",marginLeft:2}}/>
+              </div>
+            </div>
+          </>
+        ) : type === "image" && !imgError ? (
+          <img src={value} alt="Attached image"
+            onError={() => setImgError(true)}
+            style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+            <div style={{width:40,height:40,borderRadius:10,background:meta?.bg||"#F3F4F6",
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+              {meta && React.createElement(meta.icon,{style:{width:18,height:18,color:meta.color}})}
+            </div>
+            <span style={{fontSize:11,fontWeight:600,color:"#6B7280"}}>{meta?.label||"Asset"}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Info row */}
+      <div className="media-card-body">
+        <p style={{fontSize:12,fontWeight:600,color:"#111827",marginBottom:2,
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {meta?.label || "Attached file"}
+        </p>
+        <p style={{fontSize:10,color:"#9CA3AF",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {domain || value.slice(0,40)}
+        </p>
+      </div>
+
+      {/* Action buttons */}
+      <div className="media-card-actions">
+        <a href={validUrl} target="_blank" rel="noreferrer" className="media-btn primary"
+          style={{textDecoration:"none"}}>
+          <ExternalLink style={{width:10,height:10}}/>Open
+        </a>
+        <div style={{position:"relative"}}>
+          {copied && <div className="copy-confirm">Copied!</div>}
+          <button onClick={handleCopy} className="media-btn">
+            <Copy style={{width:10,height:10}}/>Copy link
+          </button>
+        </div>
+        <button onClick={() => setShowInput(true)} className="media-btn" style={{marginLeft:"auto"}}>
+          <Pencil style={{width:10,height:10}}/>Edit
+        </button>
+        <button onClick={handleRemove} className="media-btn danger">
+          <X style={{width:10,height:10}}/>Remove
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 function StatusTag({status,small}){
   const sm=STATUS_META[status]||STATUS_META.Draft;
