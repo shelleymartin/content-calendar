@@ -14,6 +14,8 @@ import {
   Trash2, Upload, X, Zap,
   Columns, Target, Home, GripVertical,
   Link, Copy, Play, Image, Film, BookOpen,
+  Globe, Wifi, WifiOff, Send, Clock, CheckCircle,
+  AlertTriangle, Settings, RefreshCw, Share2,
 } from "lucide-react";
 import { supabase, supabaseConfigError } from "./lib/supabase";
 
@@ -138,6 +140,20 @@ _s.textContent = [
   ".media-empty:hover { border-color:#A5B4FC; background:#F5F7FF; }",
   ".media-input-wrap { position:relative; margin-top:10px; }",
   ".copy-confirm { position:absolute; top:-28px; right:0; background:#111827; color:#fff; font-size:10px; padding:3px 8px; border-radius:5px; pointer-events:none; white-space:nowrap; }",
+  /* Social / publishing */
+  ".platform-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid transparent; }",
+  ".account-card { background:#fff; border:1px solid #E5E7EB; border-radius:12px; padding:16px; display:flex; align-items:center; gap:14px; transition:border-color .15s,box-shadow .15s; }",
+  ".account-card:hover { border-color:#D1D5DB; box-shadow:0 2px 8px rgba(0,0,0,.05); }",
+  ".account-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }",
+  ".connect-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid; transition:all .15s; font-family:Inter,sans-serif; white-space:nowrap; }",
+  ".connect-btn.connected { background:#ECFDF5; color:#065F46; border-color:#A7F3D0; }",
+  ".connect-btn.disconnected { background:#F9FAFB; color:#374151; border-color:#E5E7EB; }",
+  ".connect-btn.disconnected:hover { background:#F3F4F6; border-color:#D1D5DB; }",
+  ".publish-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #F9FAFB; }",
+  ".publish-row:last-child { border-bottom:none; }",
+  ".publish-toggle { width:36px; height:20px; border-radius:10px; border:none; cursor:pointer; transition:background .2s; position:relative; flex-shrink:0; }",
+  ".publish-toggle-thumb { position:absolute; top:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }",
+  ".status-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:600; white-space:nowrap; }",
 ].join("\n");
 document.head.appendChild(_s);
 }
@@ -180,6 +196,107 @@ const PRIORITY_COLOR = {
   Low:"#9CA3AF", Medium:"#F59E0B", High:"#F97316", Urgent:"#EF4444",
 };
 
+// Social platform configuration
+// Each platform has different capabilities, limits, and requirements.
+// This drives both the UI and (later) the publishing logic.
+const SOCIAL_PLATFORMS = {
+  instagram: {
+    id: "instagram",
+    label: "Instagram",
+    emoji: "📷",
+    color: "#E1306C",
+    bg: "#FDF2F8",
+    border: "#FBCFE8",
+    textColor: "#9D174D",
+    // Platform constraints
+    captionLimit: 2200,
+    hashtagLimit: 30,
+    mediaRequired: true,
+    supportsVideo: true,
+    supportsCarousel: true,
+    // Auth requirements
+    requiresPage: true,   // needs a Facebook Page linked to Instagram Business
+    authNote: "Requires Instagram Business or Creator account connected to a Facebook Page",
+    // Publishing capability
+    canPublish: false,    // set true when backend is ready
+    publishNote: "Instagram publishing requires Meta Graph API setup",
+  },
+  facebook: {
+    id: "facebook",
+    label: "Facebook",
+    emoji: "📘",
+    color: "#1877F2",
+    bg: "#EFF6FF",
+    border: "#BFDBFE",
+    textColor: "#1E40AF",
+    captionLimit: 63206,
+    mediaRequired: false,
+    supportsVideo: true,
+    requiresPage: true,
+    authNote: "Connect your Facebook Page (not personal profile)",
+    canPublish: false,
+    publishNote: "Facebook publishing requires Meta Graph API setup",
+  },
+  linkedin: {
+    id: "linkedin",
+    label: "LinkedIn",
+    emoji: "💼",
+    color: "#0A66C2",
+    bg: "#EFF6FF",
+    border: "#BFDBFE",
+    textColor: "#1E3A8A",
+    captionLimit: 3000,
+    mediaRequired: false,
+    supportsVideo: true,
+    requiresPage: false,
+    authNote: "Connect your personal profile or company page",
+    canPublish: false,
+    publishNote: "LinkedIn publishing requires LinkedIn API setup",
+  },
+  youtube: {
+    id: "youtube",
+    label: "YouTube",
+    emoji: "▶",
+    color: "#FF0000",
+    bg: "#FEF2F2",
+    border: "#FECACA",
+    textColor: "#991B1B",
+    captionLimit: 5000,   // description
+    mediaRequired: true,   // video required
+    supportsVideo: true,
+    requiresPage: false,
+    authNote: "Connect your YouTube channel via Google account",
+    canPublish: false,
+    publishNote: "YouTube publishing requires YouTube Data API v3 setup",
+  },
+  tiktok: {
+    id: "tiktok",
+    label: "TikTok",
+    emoji: "🎵",
+    color: "#010101",
+    bg: "#F9FAFB",
+    border: "#E5E7EB",
+    textColor: "#374151",
+    captionLimit: 2200,
+    mediaRequired: true,
+    supportsVideo: true,
+    requiresPage: false,
+    authNote: "Connect your TikTok creator account",
+    canPublish: false,
+    publishNote: "TikTok publishing requires TikTok for Developers API setup",
+  },
+};
+
+const PUBLISH_STATUS_META = {
+  draft:       { label:"Draft",       color:"#9CA3AF", bg:"#F3F4F6", icon:FileText    },
+  queued:      { label:"Queued",      color:"#6366F1", bg:"#EEF2FF", icon:Clock       },
+  scheduled:   { label:"Scheduled",   color:"#F59E0B", bg:"#FFFBEB", icon:Clock       },
+  publishing:  { label:"Publishing",  color:"#8B5CF6", bg:"#F5F3FF", icon:Loader2     },
+  published:   { label:"Published",   color:"#10B981", bg:"#ECFDF5", icon:CheckCircle },
+  failed:      { label:"Failed",      color:"#EF4444", bg:"#FEF2F2", icon:AlertTriangle},
+  cancelled:   { label:"Cancelled",   color:"#9CA3AF", bg:"#F3F4F6", icon:X          },
+};
+
 const NAV_ITEMS = [
   { id:"home",     label:"Home",          icon:Home      },
   { id:"calendar", label:"Calendar",      icon:Calendar  },
@@ -187,6 +304,7 @@ const NAV_ITEMS = [
   { id:"list",     label:"All Posts",     icon:List      },
   { id:"inbox",    label:"Idea Inbox",    icon:Lightbulb },
   { id:"vault",    label:"Content Vault", icon:Archive   },
+  { id:"publish",  label:"Publishing",    icon:Share2    },
   { id:"activity", label:"Activity",      icon:Activity  },
 ];
 
@@ -213,7 +331,7 @@ const relDate = s => {
   if(diff>0&&diff<8)return"In "+diff+"d";if(diff<0&&diff>-8)return Math.abs(diff)+"d ago";
   return new Date(s+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
 };
-const seedDB=()=>({ideas:[],posts:[],vault:[],notifications:[]});
+const seedDB=()=>({ideas:[],posts:[],vault:[],notifications:[],connected_accounts:[],publishing_records:[]});
 
 const Ctx = createContext(null);
 const useApp = () => useContext(Ctx);
@@ -248,15 +366,22 @@ export default function App() {
     if(loader)setLoading(true);
     setErr("");
     try{
-      const[p,i,v,n]=await Promise.all([
+      const[p,i,v,n,ca,pr]=await Promise.all([
         supabase.from("posts").select("*").order("date",{ascending:true}),
         supabase.from("ideas").select("*").order("created_at",{ascending:false}),
         supabase.from("vault").select("*").order("created_at",{ascending:false}),
         supabase.from("notifications").select("*").order("created_at",{ascending:false}),
+        supabase.from("connected_accounts").select("*").order("connected_at",{ascending:false}),
+        supabase.from("publishing_records").select("*").order("created_at",{ascending:false}),
       ]);
       if(p.error)throw p.error;if(i.error)throw i.error;
       if(v.error)throw v.error;if(n.error)throw n.error;
-      setDB({posts:p.data??[],ideas:i.data??[],vault:v.data??[],notifications:n.data??[]});
+      // connected_accounts and publishing_records are optional — tables may not exist yet
+      setDB({
+        posts:p.data??[],ideas:i.data??[],vault:v.data??[],notifications:n.data??[],
+        connected_accounts: ca.error ? [] : (ca.data??[]),
+        publishing_records: pr.error ? [] : (pr.data??[]),
+      });
     }catch(e){setErr(e.message||"Could not load data.");}
     finally{if(loader)setLoading(false);}
   },[]);
@@ -267,11 +392,13 @@ export default function App() {
     // 3 second debounce so realtime never races with optimistic updates
     const deb=()=>{clearTimeout(t);t=setTimeout(()=>fetchAll(false),3000);};
     fetchAll(true);
-    const ch=supabase.channel("dh-v5")
+    const ch=supabase.channel("dh-v6")
       .on("postgres_changes",{event:"*",schema:"public",table:"posts"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"ideas"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"vault"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"notifications"},deb)
+      .on("postgres_changes",{event:"*",schema:"public",table:"connected_accounts"},deb)
+      .on("postgres_changes",{event:"*",schema:"public",table:"publishing_records"},deb)
       .subscribe();
     return()=>{clearTimeout(t);supabase.removeChannel(ch);};
   },[fetchAll]);
@@ -349,6 +476,15 @@ export default function App() {
     // so the optimistic state is already stable when realtime fires
   }
 
+  async function disconnectAccount(accountId){
+    if(!supabase)return;
+    const{error}=await supabase.from("connected_accounts")
+      .update({is_connected:false,updated_at:new Date().toISOString()})
+      .eq("id",accountId);
+    if(error){setErr(error.message);return;}
+    await fetchAll(false);
+  }
+
   async function addIdea(text){
     if(!supabase||!text.trim())return;
     const{error}=await supabase.from("ideas").insert([{title:text.trim(),platform:"Instagram",notes:"",status:"Idea",updated_at:new Date().toISOString()}]);
@@ -397,7 +533,7 @@ export default function App() {
     editPost,setEdit,sidebar,setSidebar,cmdOpen,setCmdOpen,
     quickAdd,setQA,filterStatus,setFS,filterPlatform,setFP,sortBy,setSort,
     addPost,updatePost,deletePost,updateStatus,
-    addIdea,convertIdea,addVault,deleteVault,
+    addIdea,convertIdea,addVault,deleteVault,disconnectAccount,
     loading,err,setErr,
   };
 
@@ -536,6 +672,7 @@ function ViewRouter(){
       {view==="home"     &&<HomeView/>}
       {view==="calendar" &&<CalendarView/>}
       {view==="board"    &&<BoardView/>}
+      {view==="publish"   &&<PublishingView/>}
       {view==="list"     &&<ListView/>}
       {view==="inbox"    &&<InboxView/>}
       {view==="vault"    &&<VaultView/>}
@@ -1190,6 +1327,281 @@ function VaultView(){
   );
 }
 
+// ─── Publishing View ─────────────────────────────────────────────────────────
+// Phase 1: Connected Accounts management + publishing records.
+// OAuth and actual publishing requires backend (Supabase Edge Functions).
+// This view sets up the full UI scaffold ready for when backend is available.
+
+function PublishingView(){
+  const{db,disconnectAccount,setErr}=useApp();
+  const[activeTab,setActiveTab]=useState("accounts"); // "accounts" | "records"
+
+  const accounts = db.connected_accounts || [];
+  const records  = db.publishing_records || [];
+
+  const connectedCount = accounts.filter(a=>a.is_connected).length;
+
+  function handleConnectClick(platformId){
+    const platform = SOCIAL_PLATFORMS[platformId];
+    // Backend not yet ready — show informative message
+    setErr(
+      `${platform.label} integration coming soon. ` +
+      `${platform.publishNote}. ` +
+      `This UI is ready — we just need the backend OAuth flow.`
+    );
+  }
+
+  return(
+    <div style={{maxWidth:860}}>
+      {/* Header */}
+      <div style={{marginBottom:24}}>
+        <h2 style={{fontSize:22,fontWeight:700,color:"#111827",letterSpacing:"-0.3px",marginBottom:4}}>
+          Publishing
+        </h2>
+        <p style={{fontSize:13,color:"#6B7280"}}>
+          Connect social accounts, schedule posts, and track publishing status.
+        </p>
+      </div>
+
+      {/* Status banner */}
+      <div style={{background:"#FFFBEB",border:"1px solid #FCD34D",borderRadius:10,
+        padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
+        <AlertTriangle style={{width:15,height:15,color:"#D97706",flexShrink:0,marginTop:1}}/>
+        <div>
+          <p style={{fontSize:13,fontWeight:600,color:"#92400E",marginBottom:2}}>
+            Publishing integrations — Phase 1 ready
+          </p>
+          <p style={{fontSize:12,color:"#B45309",lineHeight:1.6}}>
+            The UI, data model, and architecture are in place.
+            Actual publishing requires connecting Supabase Edge Functions to each platform's API.
+            Connect accounts below to plan and prepare — publishing will activate once the backend is wired.
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid #E5E7EB"}}>
+        {[
+          {id:"accounts",label:"Connected Accounts",count:connectedCount},
+          {id:"records", label:"Publishing Records", count:records.length},
+        ].map(tab=>(
+          <button key={tab.id} onClick={()=>setActiveTab(tab.id)}
+            style={{padding:"10px 18px",border:"none",background:"transparent",cursor:"pointer",
+              fontSize:13,fontWeight:activeTab===tab.id?600:400,
+              color:activeTab===tab.id?"#4F46E5":"#6B7280",
+              borderBottom:activeTab===tab.id?"2px solid #6366F1":"2px solid transparent",
+              marginBottom:-1,fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",gap:6,
+              transition:"color .15s"}}>
+            {tab.label}
+            {tab.count > 0 && (
+              <span style={{background:activeTab===tab.id?"#EEF2FF":"#F3F4F6",
+                color:activeTab===tab.id?"#6366F1":"#9CA3AF",
+                fontSize:10,fontWeight:700,padding:"1px 6px",borderRadius:10}}>
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Connected Accounts tab */}
+      {activeTab === "accounts" && (
+        <div>
+          <p style={{fontSize:12,color:"#9CA3AF",marginBottom:14}}>
+            Connect your social accounts to enable scheduling and publishing.
+            Priority order: Instagram → Facebook → LinkedIn → YouTube → TikTok.
+          </p>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {Object.values(SOCIAL_PLATFORMS).map(platform=>{
+              const account = accounts.find(
+                a => a.platform === platform.id && a.is_connected
+              );
+              const isConnected = !!account;
+
+              return(
+                <div key={platform.id} className="account-card">
+                  {/* Platform icon */}
+                  <div className="account-icon"
+                    style={{background:platform.bg,border:`1px solid ${platform.border}`}}>
+                    <span style={{fontSize:20}}>{platform.emoji}</span>
+                  </div>
+
+                  {/* Platform info */}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                      <p style={{fontSize:14,fontWeight:600,color:"#111827"}}>{platform.label}</p>
+                      {isConnected ? (
+                        <span style={{display:"flex",alignItems:"center",gap:3,
+                          fontSize:10,fontWeight:600,color:"#10B981",
+                          background:"#ECFDF5",padding:"2px 7px",borderRadius:20,
+                          border:"1px solid #A7F3D0"}}>
+                          <Wifi style={{width:9,height:9}}/>Connected
+                        </span>
+                      ) : (
+                        <span style={{display:"flex",alignItems:"center",gap:3,
+                          fontSize:10,fontWeight:600,color:"#9CA3AF",
+                          background:"#F3F4F6",padding:"2px 7px",borderRadius:20}}>
+                          <WifiOff style={{width:9,height:9}}/>Not connected
+                        </span>
+                      )}
+                    </div>
+                    {isConnected ? (
+                      <p style={{fontSize:12,color:"#6B7280"}}>
+                        {account.account_name || account.account_id || "Connected account"}
+                        {account.expires_at && (
+                          <span style={{color:"#9CA3AF",marginLeft:8,fontSize:11}}>
+                            · Token expires {new Date(account.expires_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </p>
+                    ) : (
+                      <p style={{fontSize:11,color:"#9CA3AF",lineHeight:1.5}}>
+                        {platform.authNote}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    {isConnected ? (
+                      <>
+                        <button
+                          onClick={()=>disconnectAccount(account.id)}
+                          style={{display:"flex",alignItems:"center",gap:4,
+                            padding:"6px 12px",borderRadius:7,
+                            border:"1px solid #E5E7EB",background:"#fff",
+                            color:"#6B7280",fontSize:12,fontWeight:500,cursor:"pointer",
+                            fontFamily:"Inter,sans-serif",transition:"all .12s"}}
+                          onMouseEnter={e=>{e.currentTarget.style.borderColor="#EF4444";e.currentTarget.style.color="#EF4444";}}
+                          onMouseLeave={e=>{e.currentTarget.style.borderColor="#E5E7EB";e.currentTarget.style.color="#6B7280";}}>
+                          Disconnect
+                        </button>
+                        <button
+                          onClick={()=>handleConnectClick(platform.id)}
+                          style={{display:"flex",alignItems:"center",gap:4,
+                            padding:"6px 12px",borderRadius:7,
+                            border:"1px solid #E5E7EB",background:"#F9FAFB",
+                            color:"#374151",fontSize:12,fontWeight:500,cursor:"pointer",
+                            fontFamily:"Inter,sans-serif"}}>
+                          <RefreshCw style={{width:11,height:11}}/>Reconnect
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={()=>handleConnectClick(platform.id)}
+                        style={{display:"flex",alignItems:"center",gap:5,
+                          padding:"7px 16px",borderRadius:7,
+                          border:"1px solid",borderColor:platform.border,
+                          background:platform.bg,
+                          color:platform.textColor,
+                          fontSize:12,fontWeight:600,cursor:"pointer",
+                          fontFamily:"Inter,sans-serif",transition:"all .15s",
+                          whiteSpace:"nowrap"}}
+                        onMouseEnter={e=>e.currentTarget.style.opacity="0.85"}
+                        onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                        <Plus style={{width:12,height:12}}/>Connect {platform.label}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Architecture note */}
+          <div style={{marginTop:24,background:"#F9FAFB",border:"1px solid #F3F4F6",
+            borderRadius:10,padding:"16px 18px"}}>
+            <p style={{fontSize:12,fontWeight:600,color:"#374151",marginBottom:8}}>
+              Integration roadmap
+            </p>
+            {[
+              {platform:"Instagram + Facebook",status:"next",note:"Meta Graph API — requires business account verification"},
+              {platform:"LinkedIn",status:"planned",note:"LinkedIn Marketing API — requires LinkedIn app approval"},
+              {platform:"YouTube",status:"planned",note:"YouTube Data API v3 — via Google OAuth"},
+              {platform:"TikTok",status:"later",note:"TikTok for Developers API — requires app review"},
+            ].map(item=>(
+              <div key={item.platform} style={{display:"flex",alignItems:"flex-start",
+                gap:10,padding:"8px 0",borderBottom:"1px solid #F3F4F6"}}>
+                <span style={{
+                  fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:20,
+                  flexShrink:0,marginTop:2,textTransform:"uppercase",letterSpacing:"0.05em",
+                  ...(item.status==="next"
+                    ? {background:"#EEF2FF",color:"#4F46E5",border:"1px solid #C7D2FE"}
+                    : item.status==="planned"
+                    ? {background:"#FFFBEB",color:"#92400E",border:"1px solid #FCD34D"}
+                    : {background:"#F3F4F6",color:"#9CA3AF",border:"1px solid #E5E7EB"}
+                  )
+                }}>{item.status}</span>
+                <div>
+                  <p style={{fontSize:12,fontWeight:600,color:"#374151"}}>{item.platform}</p>
+                  <p style={{fontSize:11,color:"#9CA3AF",marginTop:1}}>{item.note}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Publishing Records tab */}
+      {activeTab === "records" && (
+        <div>
+          {records.length > 0 ? (
+            <div className="card" style={{overflow:"hidden"}}>
+              <div style={{display:"grid",
+                gridTemplateColumns:"minmax(0,1fr) 90px 90px 90px 80px",
+                gap:8,padding:"8px 16px",borderBottom:"1px solid #F3F4F6"}}>
+                {["Post","Platform","Status","Scheduled","Published"].map(h=>(
+                  <p key={h} style={{fontSize:10,fontWeight:600,color:"#9CA3AF",
+                    textTransform:"uppercase",letterSpacing:"0.08em"}}>{h}</p>
+                ))}
+              </div>
+              {records.map(r=>{
+                const statusMeta = PUBLISH_STATUS_META[r.status] || PUBLISH_STATUS_META.draft;
+                const post = db.posts.find(p=>p.id===r.post_id);
+                const platform = SOCIAL_PLATFORMS[r.platform];
+                const StatusIcon = statusMeta.icon;
+                return(
+                  <div key={r.id} style={{display:"grid",
+                    gridTemplateColumns:"minmax(0,1fr) 90px 90px 90px 80px",
+                    gap:8,padding:"10px 16px",borderBottom:"1px solid #F9FAFB",
+                    alignItems:"center"}}>
+                    <p style={{fontSize:13,fontWeight:500,color:"#111827",
+                      whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                      {post?.title || "Unknown post"}
+                    </p>
+                    <div style={{display:"flex",alignItems:"center",gap:5}}>
+                      <span>{platform?.emoji}</span>
+                      <span style={{fontSize:11,color:"#6B7280"}}>{platform?.label||r.platform}</span>
+                    </div>
+                    <span style={{display:"inline-flex",alignItems:"center",gap:4,
+                      padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,
+                      background:statusMeta.bg,color:statusMeta.color}}>
+                      <StatusIcon style={{width:9,height:9}}/>{statusMeta.label}
+                    </span>
+                    <span style={{fontSize:11,color:"#9CA3AF"}}>
+                      {r.scheduled_at
+                        ? new Date(r.scheduled_at).toLocaleDateString("en-US",{month:"short",day:"numeric"})
+                        : "—"}
+                    </span>
+                    <span style={{fontSize:11,color:"#9CA3AF"}}>
+                      {r.published_at
+                        ? new Date(r.published_at).toLocaleDateString("en-US",{month:"short",day:"numeric"})
+                        : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyMsg icon="📡" text="No publishing records yet. Connect accounts and start scheduling posts."/>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function ActivityView(){
   const{db}=useApp();
   const dotCls={success:"dot-approved",warning:"dot-scheduled",info:"dot-posted",error:"dot-draft"};
@@ -1393,11 +1805,17 @@ function EditPanel(){
           </FieldRow>
 
           {/* ── Feedback ── */}
-          <FieldRow label="Feedback" style={{marginBottom:8}}>
+          <FieldRow label="Feedback" style={{marginBottom:22}}>
             <textarea value={form.feedback} onChange={sf("feedback")}
               placeholder="Client feedback or revision notes..." rows={3}
               style={{...inp,resize:"none",lineHeight:1.75}} {...foc}/>
           </FieldRow>
+
+          {/* ── Divider ── */}
+          <div style={{height:1,background:"#F3F4F6",margin:"0 0 20px"}}/>
+
+          {/* ── Publish targets ── */}
+          <PublishTargets post={post}/>
 
         </div>
         <div style={{padding:"12px 20px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",justifyContent:"flex-end"}}>
@@ -1471,6 +1889,92 @@ function CommandPalette(){
     </div>
   );
 }
+
+// ─── PublishTargets ───────────────────────────────────────────────────────────
+// Shows in the EditPanel — lets the user see per-platform publish status
+// and toggle which platforms this post is targeted for.
+
+function PublishTargets({ post }){
+  const{db,setErr}=useApp();
+  const records = (db.publishing_records||[]).filter(r=>r.post_id===post.id);
+  const connectedAccounts = db.connected_accounts||[];
+
+  function handlePublishClick(platformId){
+    const platform = SOCIAL_PLATFORMS[platformId];
+    setErr(
+      `Publishing to ${platform.label} coming soon. ` +
+      "Activate publishing by connecting a ${platform.label} account in the Publishing tab."
+    );
+  }
+
+  return(
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+        <p style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.08em"}}>
+          Publish to
+        </p>
+        <a href="#" onClick={e=>{e.preventDefault();}}
+          style={{fontSize:11,color:"#6366F1",textDecoration:"none",fontWeight:500}}>
+          Manage accounts →
+        </a>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {Object.values(SOCIAL_PLATFORMS).map(platform=>{
+          const record = records.find(r=>r.platform===platform.id);
+          const account = connectedAccounts.find(a=>a.platform===platform.id&&a.is_connected);
+          const statusMeta = record ? (PUBLISH_STATUS_META[record.status]||PUBLISH_STATUS_META.draft) : null;
+          const StatusIcon = statusMeta?.icon;
+
+          return(
+            <div key={platform.id} style={{display:"flex",alignItems:"center",gap:10,
+              padding:"8px 10px",borderRadius:8,background:"#FAFAFA",border:"1px solid #F3F4F6"}}>
+              {/* Platform */}
+              <span style={{fontSize:15,flexShrink:0}}>{platform.emoji}</span>
+              <span style={{fontSize:12,fontWeight:500,color:"#374151",flex:1,minWidth:0}}>
+                {platform.label}
+              </span>
+
+              {/* Status or connect prompt */}
+              {record ? (
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  {record.external_post_url ? (
+                    <a href={record.external_post_url} target="_blank" rel="noreferrer"
+                      style={{display:"flex",alignItems:"center",gap:3,
+                        fontSize:10,color:"#6366F1",textDecoration:"none",fontWeight:600}}>
+                      <ExternalLink style={{width:9,height:9}}/>View
+                    </a>
+                  ) : null}
+                  <span style={{display:"inline-flex",alignItems:"center",gap:3,
+                    padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600,
+                    background:statusMeta.bg,color:statusMeta.color}}>
+                    {StatusIcon&&<StatusIcon style={{width:8,height:8}}/>}
+                    {statusMeta.label}
+                  </span>
+                </div>
+              ) : account ? (
+                <button onClick={()=>handlePublishClick(platform.id)}
+                  style={{display:"flex",alignItems:"center",gap:4,
+                    padding:"4px 10px",borderRadius:6,
+                    border:"1px solid",borderColor:platform.border,
+                    background:platform.bg,color:platform.textColor,
+                    fontSize:11,fontWeight:600,cursor:"pointer",
+                    fontFamily:"Inter,sans-serif",transition:"all .12s",whiteSpace:"nowrap"}}>
+                  <Send style={{width:9,height:9}}/>Publish
+                </button>
+              ) : (
+                <span style={{fontSize:10,color:"#D1D5DB",fontStyle:"italic"}}>
+                  Not connected
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 // ─── Media Attachment Component ───────────────────────────────────────────────
 // Detects media type, shows preview card, one-click open/copy/remove.
