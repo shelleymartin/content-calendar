@@ -13,15 +13,22 @@ import {
   Loader2, Menu, Pencil, Plus, Search,
   Trash2, Upload, X, Zap,
   Columns, Target, Home, GripVertical,
+  Link, Copy, Play, Image, Film, BookOpen,
+  Globe, Wifi, WifiOff, Send, Clock, CheckCircle,
+  AlertTriangle, Settings, RefreshCw, Share2,
 } from "lucide-react";
 import { supabase, supabaseConfigError } from "./lib/supabase";
 
-const _f = document.createElement("link");
-_f.rel = "stylesheet";
-_f.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap";
-document.head.appendChild(_f);
+if (!document.getElementById("dh-fonts")) {
+  const _f = document.createElement("link");
+  _f.id = "dh-fonts"; _f.rel = "stylesheet";
+  _f.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap";
+  document.head.appendChild(_f);
+}
 
+if (!document.getElementById("dh-css")) {
 const _s = document.createElement("style");
+_s.id = "dh-css";
 _s.textContent = [
   "*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }",
   "html, body, #root { height: 100%; overflow: hidden; }",
@@ -65,10 +72,27 @@ _s.textContent = [
   ".tag-approved { background:#ECFDF5; color:#065F46; border-color:#A7F3D0; }",
   ".tag-scheduled { background:#FFFBEB; color:#92400E; border-color:#FCD34D; }",
   ".tag-posted { background:#EEF2FF; color:#3730A3; border-color:#C7D2FE; }",
+  ".tag-review { background:#FFF7ED; color:#92400E; border-color:#FED7AA; }",
   ".dot-draft { background:#9CA3AF; flex-shrink:0; }",
+  ".dot-review { background:#F97316; flex-shrink:0; }",
   ".dot-approved { background:#10B981; flex-shrink:0; }",
   ".dot-scheduled { background:#F59E0B; flex-shrink:0; }",
   ".dot-posted { background:#6366F1; flex-shrink:0; }",
+  ".checklist-item { display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:1px solid #F9FAFB; cursor:pointer; transition:background .1s; }",
+  ".checklist-item:last-child { border-bottom:none; }",
+  ".checklist-item:hover { background:#F9FAFB; }",
+  ".checklist-check { width:16px; height:16px; border-radius:4px; border:1.5px solid #D1D5DB; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }",
+  ".checklist-check.done { background:#6366F1; border-color:#6366F1; }",
+  ".checklist-label { font-size:12px; color:#374151; flex:1; line-height:1.4; }",
+  ".checklist-label.done { text-decoration:line-through; color:#9CA3AF; }",
+  ".status-flow { display:flex; align-items:center; gap:0; margin-top:4px; }",
+  ".status-step { display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:0; font-size:11px; font-weight:600; cursor:pointer; border:1px solid #E5E7EB; background:#fff; color:#6B7280; transition:all .12s; position:relative; }",
+  ".status-step:first-child { border-radius:8px 0 0 8px; }",
+  ".status-step:last-child { border-radius:0 8px 8px 0; }",
+  ".status-step.active { background:#EEF2FF; color:#4F46E5; border-color:#6366F1; z-index:1; }",
+  ".status-step.done { background:#F0FDF4; color:#16A34A; border-color:#86EFAC; }",
+  ".progress-bar { height:4px; background:#F3F4F6; border-radius:99px; overflow:hidden; margin-top:8px; }",
+  ".progress-fill { height:100%; background:linear-gradient(90deg,#6366F1,#8B5CF6); border-radius:99px; transition:width .5s ease; }",
   ".overlay { position:fixed; inset:0; z-index:40; background:rgba(0,0,0,.16); backdrop-filter:blur(3px); }",
   ".cmd-wrap { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; background:rgba(0,0,0,.22); backdrop-filter:blur(4px); }",
   ".cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); width:100%; min-width:0; overflow:hidden; }",
@@ -101,18 +125,64 @@ _s.textContent = [
   ".k-grip { color:#D1D5DB; flex-shrink:0; cursor:grab; transition:color .1s; }",
   ".k-card:hover .k-grip { color:#9CA3AF; }",
   ".k-drop-ph { height:56px; border:2px dashed #C7D2FE; border-radius:10px; background:#EEF2FF; margin-bottom:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#A5B4FC; animation:dropPulse 1s ease infinite; }",
+  ".media-card { background:#F9FAFB; border:1.5px solid #E5E7EB; border-radius:10px; overflow:hidden; transition:border-color .15s,box-shadow .15s; }",
+  ".media-card:hover { border-color:#C7D2FE; box-shadow:0 2px 10px rgba(99,102,241,.08); }",
+  ".media-card-preview { width:100%; display:flex; align-items:center; justify-content:center; background:#F9FAFB; position:relative; overflow:hidden; border-radius:10px 10px 0 0; }",
+  ".media-card-body { padding:10px 12px; }",
+  ".media-card-actions { display:flex; gap:6px; padding:8px 12px; border-top:1px solid #F3F4F6; background:#FAFAFA; }",
+  ".media-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid #E5E7EB; background:#fff; color:#374151; transition:all .12s; font-family:Inter,sans-serif; white-space:nowrap; }",
+  ".media-btn:hover { background:#F3F4F6; border-color:#D1D5DB; }",
+  ".media-btn.primary { background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE; }",
+  ".media-btn.primary:hover { background:#E0E7FF; }",
+  ".media-btn.danger { background:#FEF2F2; color:#DC2626; border-color:#FECACA; }",
+  ".media-btn.danger:hover { background:#FEE2E2; }",
+  ".media-empty { border:1.5px dashed #E5E7EB; border-radius:10px; padding:20px; text-align:center; cursor:pointer; transition:all .15s; }",
+  ".media-empty:hover { border-color:#A5B4FC; background:#F5F7FF; }",
+  ".media-input-wrap { position:relative; margin-top:10px; }",
+  ".copy-confirm { position:absolute; top:-28px; right:0; background:#111827; color:#fff; font-size:10px; padding:3px 8px; border-radius:5px; pointer-events:none; white-space:nowrap; }",
+  /* Social / publishing */
+  ".platform-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; border:1px solid transparent; }",
+  ".account-card { background:#fff; border:1px solid #E5E7EB; border-radius:12px; padding:16px; display:flex; align-items:center; gap:14px; transition:border-color .15s,box-shadow .15s; }",
+  ".account-card:hover { border-color:#D1D5DB; box-shadow:0 2px 8px rgba(0,0,0,.05); }",
+  ".account-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }",
+  ".connect-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid; transition:all .15s; font-family:Inter,sans-serif; white-space:nowrap; }",
+  ".connect-btn.connected { background:#ECFDF5; color:#065F46; border-color:#A7F3D0; }",
+  ".connect-btn.disconnected { background:#F9FAFB; color:#374151; border-color:#E5E7EB; }",
+  ".connect-btn.disconnected:hover { background:#F3F4F6; border-color:#D1D5DB; }",
+  ".publish-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #F9FAFB; }",
+  ".publish-row:last-child { border-bottom:none; }",
+  ".publish-toggle { width:36px; height:20px; border-radius:10px; border:none; cursor:pointer; transition:background .2s; position:relative; flex-shrink:0; }",
+  ".publish-toggle-thumb { position:absolute; top:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }",
+  ".status-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:600; white-space:nowrap; }",
 ].join("\n");
 document.head.appendChild(_s);
+}
 
-const STATUSES = ["Draft","Approved","Scheduled","Posted"];
+const STATUSES = ["Draft","In Review","Approved","Scheduled","Posted"];
 const PLATFORMS = ["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
 
 const STATUS_META = {
-  Draft:     { tagCls:"tag-draft",     dot:"dot-draft"     },
-  Approved:  { tagCls:"tag-approved",  dot:"dot-approved"  },
-  Scheduled: { tagCls:"tag-scheduled", dot:"dot-scheduled" },
-  Posted:    { tagCls:"tag-posted",    dot:"dot-posted"    },
+  Draft:      { tagCls:"tag-draft",      dot:"dot-draft",      label:"Draft"      },
+  "In Review":{ tagCls:"tag-review",     dot:"dot-review",     label:"In Review"  },
+  Approved:   { tagCls:"tag-approved",   dot:"dot-approved",   label:"Approved"   },
+  Scheduled:  { tagCls:"tag-scheduled",  dot:"dot-scheduled",  label:"Scheduled"  },
+  Posted:     { tagCls:"tag-posted",     dot:"dot-posted",     label:"Posted"     },
 };
+
+// Workflow order for status progression
+const STATUS_ORDER = ["Draft","In Review","Approved","Scheduled","Posted"];
+
+// Content checklist defaults — shown in the detail drawer
+const DEFAULT_CHECKLIST = [
+  { id:"caption",   label:"Caption written",   done:false },
+  { id:"creative",  label:"Creative ready",    done:false },
+  { id:"reviewed",  label:"Reviewed",          done:false },
+  { id:"approved",  label:"Client approved",   done:false },
+  { id:"hashtags",  label:"Hashtags added",    done:false },
+  { id:"links",     label:"Links checked",     done:false },
+  { id:"scheduled", label:"Scheduled in app",  done:false },
+  { id:"qa",        label:"Final QA done",     done:false },
+];
 
 const PLATFORM_META = {
   Instagram: { emoji:"📷" },
@@ -126,6 +196,107 @@ const PRIORITY_COLOR = {
   Low:"#9CA3AF", Medium:"#F59E0B", High:"#F97316", Urgent:"#EF4444",
 };
 
+// Social platform configuration
+// Each platform has different capabilities, limits, and requirements.
+// This drives both the UI and (later) the publishing logic.
+const SOCIAL_PLATFORMS = {
+  instagram: {
+    id: "instagram",
+    label: "Instagram",
+    emoji: "📷",
+    color: "#E1306C",
+    bg: "#FDF2F8",
+    border: "#FBCFE8",
+    textColor: "#9D174D",
+    // Platform constraints
+    captionLimit: 2200,
+    hashtagLimit: 30,
+    mediaRequired: true,
+    supportsVideo: true,
+    supportsCarousel: true,
+    // Auth requirements
+    requiresPage: true,   // needs a Facebook Page linked to Instagram Business
+    authNote: "Requires Instagram Business or Creator account connected to a Facebook Page",
+    // Publishing capability
+    canPublish: false,    // set true when backend is ready
+    publishNote: "Instagram publishing requires Meta Graph API setup",
+  },
+  facebook: {
+    id: "facebook",
+    label: "Facebook",
+    emoji: "📘",
+    color: "#1877F2",
+    bg: "#EFF6FF",
+    border: "#BFDBFE",
+    textColor: "#1E40AF",
+    captionLimit: 63206,
+    mediaRequired: false,
+    supportsVideo: true,
+    requiresPage: true,
+    authNote: "Connect your Facebook Page (not personal profile)",
+    canPublish: false,
+    publishNote: "Facebook publishing requires Meta Graph API setup",
+  },
+  linkedin: {
+    id: "linkedin",
+    label: "LinkedIn",
+    emoji: "💼",
+    color: "#0A66C2",
+    bg: "#EFF6FF",
+    border: "#BFDBFE",
+    textColor: "#1E3A8A",
+    captionLimit: 3000,
+    mediaRequired: false,
+    supportsVideo: true,
+    requiresPage: false,
+    authNote: "Connect your personal profile or company page",
+    canPublish: false,
+    publishNote: "LinkedIn publishing requires LinkedIn API setup",
+  },
+  youtube: {
+    id: "youtube",
+    label: "YouTube",
+    emoji: "▶",
+    color: "#FF0000",
+    bg: "#FEF2F2",
+    border: "#FECACA",
+    textColor: "#991B1B",
+    captionLimit: 5000,   // description
+    mediaRequired: true,   // video required
+    supportsVideo: true,
+    requiresPage: false,
+    authNote: "Connect your YouTube channel via Google account",
+    canPublish: false,
+    publishNote: "YouTube publishing requires YouTube Data API v3 setup",
+  },
+  tiktok: {
+    id: "tiktok",
+    label: "TikTok",
+    emoji: "🎵",
+    color: "#010101",
+    bg: "#F9FAFB",
+    border: "#E5E7EB",
+    textColor: "#374151",
+    captionLimit: 2200,
+    mediaRequired: true,
+    supportsVideo: true,
+    requiresPage: false,
+    authNote: "Connect your TikTok creator account",
+    canPublish: false,
+    publishNote: "TikTok publishing requires TikTok for Developers API setup",
+  },
+};
+
+const PUBLISH_STATUS_META = {
+  draft:       { label:"Draft",       color:"#9CA3AF", bg:"#F3F4F6", icon:FileText    },
+  queued:      { label:"Queued",      color:"#6366F1", bg:"#EEF2FF", icon:Clock       },
+  scheduled:   { label:"Scheduled",   color:"#F59E0B", bg:"#FFFBEB", icon:Clock       },
+  publishing:  { label:"Publishing",  color:"#8B5CF6", bg:"#F5F3FF", icon:Loader2     },
+  published:   { label:"Published",   color:"#10B981", bg:"#ECFDF5", icon:CheckCircle },
+  failed:      { label:"Failed",      color:"#EF4444", bg:"#FEF2F2", icon:AlertTriangle},
+  cancelled:   { label:"Cancelled",   color:"#9CA3AF", bg:"#F3F4F6", icon:X          },
+};
+
 const NAV_ITEMS = [
   { id:"home",     label:"Home",          icon:Home      },
   { id:"calendar", label:"Calendar",      icon:Calendar  },
@@ -133,6 +304,7 @@ const NAV_ITEMS = [
   { id:"list",     label:"All Posts",     icon:List      },
   { id:"inbox",    label:"Idea Inbox",    icon:Lightbulb },
   { id:"vault",    label:"Content Vault", icon:Archive   },
+  { id:"publish",  label:"Publishing",    icon:Share2    },
   { id:"activity", label:"Activity",      icon:Activity  },
 ];
 
@@ -159,7 +331,7 @@ const relDate = s => {
   if(diff>0&&diff<8)return"In "+diff+"d";if(diff<0&&diff>-8)return Math.abs(diff)+"d ago";
   return new Date(s+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"});
 };
-const seedDB=()=>({ideas:[],posts:[],vault:[],notifications:[]});
+const seedDB=()=>({ideas:[],posts:[],vault:[],notifications:[],connected_accounts:[],publishing_records:[]});
 
 const Ctx = createContext(null);
 const useApp = () => useContext(Ctx);
@@ -194,15 +366,22 @@ export default function App() {
     if(loader)setLoading(true);
     setErr("");
     try{
-      const[p,i,v,n]=await Promise.all([
+      const[p,i,v,n,ca,pr]=await Promise.all([
         supabase.from("posts").select("*").order("date",{ascending:true}),
         supabase.from("ideas").select("*").order("created_at",{ascending:false}),
         supabase.from("vault").select("*").order("created_at",{ascending:false}),
         supabase.from("notifications").select("*").order("created_at",{ascending:false}),
+        supabase.from("connected_accounts").select("*").order("connected_at",{ascending:false}),
+        supabase.from("publishing_records").select("*").order("created_at",{ascending:false}),
       ]);
       if(p.error)throw p.error;if(i.error)throw i.error;
       if(v.error)throw v.error;if(n.error)throw n.error;
-      setDB({posts:p.data??[],ideas:i.data??[],vault:v.data??[],notifications:n.data??[]});
+      // connected_accounts and publishing_records are optional — tables may not exist yet
+      setDB({
+        posts:p.data??[],ideas:i.data??[],vault:v.data??[],notifications:n.data??[],
+        connected_accounts: ca.error ? [] : (ca.data??[]),
+        publishing_records: pr.error ? [] : (pr.data??[]),
+      });
     }catch(e){setErr(e.message||"Could not load data.");}
     finally{if(loader)setLoading(false);}
   },[]);
@@ -213,11 +392,13 @@ export default function App() {
     // 3 second debounce so realtime never races with optimistic updates
     const deb=()=>{clearTimeout(t);t=setTimeout(()=>fetchAll(false),3000);};
     fetchAll(true);
-    const ch=supabase.channel("dh-v5")
+    const ch=supabase.channel("dh-v6")
       .on("postgres_changes",{event:"*",schema:"public",table:"posts"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"ideas"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"vault"},deb)
       .on("postgres_changes",{event:"*",schema:"public",table:"notifications"},deb)
+      .on("postgres_changes",{event:"*",schema:"public",table:"connected_accounts"},deb)
+      .on("postgres_changes",{event:"*",schema:"public",table:"publishing_records"},deb)
       .subscribe();
     return()=>{clearTimeout(t);supabase.removeChannel(ch);};
   },[fetchAll]);
@@ -239,7 +420,8 @@ export default function App() {
       });
   },[db.posts,search,filterStatus,filterPlatform,sortBy]);
 
-  const upcoming=useMemo(()=>{const t=fmt(new Date());return filtered.filter(p=>p.date>=t);},[filtered]);
+  // Use db.posts so upcoming count is not affected by active filters
+  const upcoming=useMemo(()=>{const t=fmt(new Date());return db.posts.filter(p=>p.date>=t&&p.status!=="Posted");},[db.posts]);
   const grid=useMemo(()=>buildGrid(selDate,db.posts),[selDate,db.posts]);
   // Use db.posts (not filtered) so dropped cards always appear in target column
   const byStatus=useMemo(()=>Object.fromEntries(STATUSES.map(s=>[s,db.posts.filter(p=>p.status===s).sort((a,b)=>new Date(a.date)-new Date(b.date))])),[db.posts]);
@@ -251,7 +433,7 @@ export default function App() {
   }
   async function addPost(post){
     if(!supabase)return;
-    const payload={title:post.title,date:post.date,platform:post.platform,status:post.status||"Draft",caption:post.caption||"",notes:post.notes||"",video_link:normUrl(post.video_link||""),feedback:post.feedback||"",updated_at:new Date().toISOString()};
+    const payload={title:post.title,date:post.date,platform:post.platform,status:post.status||"Draft",caption:post.caption||"",notes:post.notes||"",video_link:normUrl(post.video_link||""),feedback:post.feedback||"",checklist:post.checklist??[],updated_at:new Date().toISOString()};
     const{data,error}=await supabase.from("posts").insert([payload]).select();
     if(error){setErr(error.message);return;}
     if(data?.[0])await notif('"'+data[0].title+'" added.',"success",data[0].id);
@@ -259,16 +441,19 @@ export default function App() {
   }
   async function updatePost(id,fields){
     if(!supabase)return false;
-    const payload={title:fields.title,date:fields.date,platform:fields.platform,status:fields.status,notes:fields.notes||"",video_link:normUrl(fields.video_link||""),caption:fields.caption||"",feedback:fields.feedback||"",updated_at:new Date().toISOString()};
+    const payload={title:fields.title,date:fields.date,platform:fields.platform,status:fields.status,notes:fields.notes||"",video_link:normUrl(fields.video_link||""),caption:fields.caption||"",feedback:fields.feedback||"",checklist:fields.checklist??[],updated_at:new Date().toISOString()};
     const{data,error}=await supabase.from("posts").update(payload).eq("id",id).select();
     if(error){setErr(error.message);return false;}
     if(data?.[0])await notif('"'+data[0].title+'" updated.',"info",data[0].id);
+    // Sync editPost so the panel shows fresh data after autosave
+    if(data?.[0]) setEdit(prev=>prev?.id===id ? {...prev,...data[0]} : prev);
     await fetchAll(false);return true;
   }
   async function deletePost(id){
     if(!supabase)return;
-    const post=db.posts.find(p=>p.id===id);
-    await supabase.from("posts").delete().eq("id",id);
+    const post=db.posts.find(p=>String(p.id)===String(id));
+    const{error}=await supabase.from("posts").delete().eq("id",id);
+    if(error){setErr(error.message);return;}
     if(post)await notif('"'+post.title+'" deleted.',"warning",id);
     setEdit(prev=>prev?.id===id?null:prev);
     await fetchAll(false);
@@ -291,14 +476,24 @@ export default function App() {
     // so the optimistic state is already stable when realtime fires
   }
 
+  async function disconnectAccount(accountId){
+    if(!supabase)return;
+    const{error}=await supabase.from("connected_accounts")
+      .update({is_connected:false,updated_at:new Date().toISOString()})
+      .eq("id",accountId);
+    if(error){setErr(error.message);return;}
+    await fetchAll(false);
+  }
+
   async function addIdea(text){
     if(!supabase||!text.trim())return;
-    await supabase.from("ideas").insert([{title:text.trim(),platform:"Instagram",notes:"",status:"Idea",updated_at:new Date().toISOString()}]);
+    const{error}=await supabase.from("ideas").insert([{title:text.trim(),platform:"Instagram",notes:"",status:"Idea",updated_at:new Date().toISOString()}]);
+    if(error){setErr(error.message);return;}
     await fetchAll(false);
   }
   async function convertIdea(idea){
     if(!supabase)return;
-    const{data,error}=await supabase.from("posts").insert([{title:idea.title||"Untitled",date:fmt(new Date()),platform:idea.platform||"Instagram",status:"Draft",caption:idea.notes||"",notes:"",video_link:"",feedback:"",updated_at:new Date().toISOString()}]).select();
+    const{data,error}=await supabase.from("posts").insert([{title:idea.title||"Untitled",date:fmt(new Date()),platform:idea.platform||"Instagram",status:"Draft",caption:idea.notes||"",notes:"",video_link:"",feedback:"",checklist:DEFAULT_CHECKLIST.map(i=>({...i})),updated_at:new Date().toISOString()}]).select();
     if(error){setErr(error.message);return;}
     await supabase.from("ideas").delete().eq("id",idea.id);
     await notif('Post from idea: "'+idea.title+'"',"success",data?.[0]?.id||null);
@@ -306,7 +501,8 @@ export default function App() {
   }
   async function addVault(text){
     if(!supabase||!text.trim())return;
-    await supabase.from("vault").insert([{title:"Saved Content",platform:"General",content:text.trim(),media_url:"",tags:"",updated_at:new Date().toISOString()}]);
+    const{error}=await supabase.from("vault").insert([{title:"Saved Content",platform:"General",content:text.trim(),media_url:"",tags:"",updated_at:new Date().toISOString()}]);
+    if(error){setErr(error.message);return;}
     await fetchAll(false);
   }
   async function deleteVault(id){
@@ -337,7 +533,7 @@ export default function App() {
     editPost,setEdit,sidebar,setSidebar,cmdOpen,setCmdOpen,
     quickAdd,setQA,filterStatus,setFS,filterPlatform,setFP,sortBy,setSort,
     addPost,updatePost,deletePost,updateStatus,
-    addIdea,convertIdea,addVault,deleteVault,
+    addIdea,convertIdea,addVault,deleteVault,disconnectAccount,
     loading,err,setErr,
   };
 
@@ -476,6 +672,7 @@ function ViewRouter(){
       {view==="home"     &&<HomeView/>}
       {view==="calendar" &&<CalendarView/>}
       {view==="board"    &&<BoardView/>}
+      {view==="publish"   &&<PublishingView/>}
       {view==="list"     &&<ListView/>}
       {view==="inbox"    &&<InboxView/>}
       {view==="vault"    &&<VaultView/>}
@@ -716,8 +913,6 @@ function BoardView(){
   // Count of active drag-enters per column — lets us ignore child leave events
   const enterCountRef = useRef({});
 
-  function getDragPost(){ return db.posts.find(p=>p.id===draggingIdRef.current); }
-
   // ── Drag handlers ────────────────────────────────────────────────────────
   function handleDragStart(e, postId){
     // Set both ref (sync, no stale closure) and state (for rendering)
@@ -725,7 +920,7 @@ function BoardView(){
     setDraggingId(postId);
     e.dataTransfer.effectAllowed = "move";
     // Set the data — use both formats for maximum browser compatibility
-    e.dataTransfer.setData("text/plain", postId);
+    e.dataTransfer.setData("text/plain", String(postId));
     e.dataTransfer.setData("application/json", JSON.stringify({postId}));
     // Without this the whole card renders as the drag ghost on some browsers
     e.dataTransfer.setDragImage(e.currentTarget, 20, 20);
@@ -767,23 +962,46 @@ function BoardView(){
     e.preventDefault();
     e.stopPropagation();
 
-    // Reset visual state immediately
+    // Reset visual state
     setDragOverCol(null);
     enterCountRef.current = {};
 
-    // Read id from ref first (more reliable), fall back to dataTransfer
-    const id = draggingIdRef.current || e.dataTransfer.getData("text/plain");
+    // Read raw id — ref is sync-safe, dataTransfer is the fallback
+    const rawId = draggingIdRef.current ?? e.dataTransfer.getData("text/plain");
+
+    // Debug: log types so we can catch any future id mismatch
+    console.log("DnD drop", {
+      rawId,
+      rawIdType: typeof rawId,
+      targetStatus: status,
+      postIds: db.posts.map(p=>[p.id, typeof p.id]).slice(0,10),
+    });
+
+    // Coerce both sides to string for comparison — fixes numeric vs string id mismatch
+    const post = db.posts.find(p => String(p.id) === String(rawId));
+
+    if(!post){
+      console.warn("DnD: post not found", {
+        rawId,
+        rawIdType: typeof rawId,
+        postIds: db.posts.map(p=>[p.id, typeof p.id]).slice(0,10),
+      });
+      // Clear state even on failure
+      draggingIdRef.current = null;
+      setDraggingId(null);
+      return;
+    }
+
+    // Clear drag state AFTER post is confirmed found
     draggingIdRef.current = null;
     setDraggingId(null);
 
-    if(!id){ console.warn("DnD: no id on drop"); return; }
-
-    const post = db.posts.find(p => p.id === id);
-    if(!post){ console.warn("DnD: post not found", id); return; }
-    if(post.status === status){ return; } // no change needed
+    if(post.status === status) return; // no change needed
 
     console.log("DnD: moving", post.title, "from", post.status, "to", status);
-    await updateStatus(id, status);
+
+    // Use post.id (the real typed id from Supabase) not rawId
+    await updateStatus(post.id, status);
   }
 
   return(
@@ -805,8 +1023,10 @@ function BoardView(){
           const posts = byStatus[status] || [];
           const sm    = STATUS_META[status];
           const isOver    = dragOverCol === status;
-          const dragPost  = draggingId ? db.posts.find(p=>p.id===draggingId) : null;
-          const willMove  = draggingId && dragPost && dragPost.status !== status;
+          // Use ref for current dragging id — state can lag 1 render behind ref
+          const liveDragId = draggingIdRef.current ?? draggingId;
+          const dragPost  = liveDragId ? db.posts.find(p=>String(p.id)===String(liveDragId)) : null;
+          const willMove  = liveDragId && dragPost && dragPost.status !== status;
 
           return(
             <div
@@ -841,7 +1061,7 @@ function BoardView(){
                 {posts.map(p=>{
                   const pm = PLATFORM_META[p.platform] || PLATFORM_META.Instagram;
                   const pr = PRIORITY_COLOR[p.priority] || PRIORITY_COLOR.Medium;
-                  const isDragging = p.id === draggingId;
+                  const isDragging = draggingId != null && String(p.id) === String(draggingId);
 
                   return(
                     <DragCard
@@ -1107,6 +1327,281 @@ function VaultView(){
   );
 }
 
+// ─── Publishing View ─────────────────────────────────────────────────────────
+// Phase 1: Connected Accounts management + publishing records.
+// OAuth and actual publishing requires backend (Supabase Edge Functions).
+// This view sets up the full UI scaffold ready for when backend is available.
+
+function PublishingView(){
+  const{db,disconnectAccount,setErr}=useApp();
+  const[activeTab,setActiveTab]=useState("accounts"); // "accounts" | "records"
+
+  const accounts = db.connected_accounts || [];
+  const records  = db.publishing_records || [];
+
+  const connectedCount = accounts.filter(a=>a.is_connected).length;
+
+  function handleConnectClick(platformId){
+    const platform = SOCIAL_PLATFORMS[platformId];
+    // Backend not yet ready — show informative message
+    setErr(
+      `${platform.label} integration coming soon. ` +
+      `${platform.publishNote}. ` +
+      `This UI is ready — we just need the backend OAuth flow.`
+    );
+  }
+
+  return(
+    <div style={{maxWidth:860}}>
+      {/* Header */}
+      <div style={{marginBottom:24}}>
+        <h2 style={{fontSize:22,fontWeight:700,color:"#111827",letterSpacing:"-0.3px",marginBottom:4}}>
+          Publishing
+        </h2>
+        <p style={{fontSize:13,color:"#6B7280"}}>
+          Connect social accounts, schedule posts, and track publishing status.
+        </p>
+      </div>
+
+      {/* Status banner */}
+      <div style={{background:"#FFFBEB",border:"1px solid #FCD34D",borderRadius:10,
+        padding:"12px 16px",marginBottom:20,display:"flex",alignItems:"flex-start",gap:10}}>
+        <AlertTriangle style={{width:15,height:15,color:"#D97706",flexShrink:0,marginTop:1}}/>
+        <div>
+          <p style={{fontSize:13,fontWeight:600,color:"#92400E",marginBottom:2}}>
+            Publishing integrations — Phase 1 ready
+          </p>
+          <p style={{fontSize:12,color:"#B45309",lineHeight:1.6}}>
+            The UI, data model, and architecture are in place.
+            Actual publishing requires connecting Supabase Edge Functions to each platform's API.
+            Connect accounts below to plan and prepare — publishing will activate once the backend is wired.
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",gap:0,marginBottom:20,borderBottom:"1px solid #E5E7EB"}}>
+        {[
+          {id:"accounts",label:"Connected Accounts",count:connectedCount},
+          {id:"records", label:"Publishing Records", count:records.length},
+        ].map(tab=>(
+          <button key={tab.id} onClick={()=>setActiveTab(tab.id)}
+            style={{padding:"10px 18px",border:"none",background:"transparent",cursor:"pointer",
+              fontSize:13,fontWeight:activeTab===tab.id?600:400,
+              color:activeTab===tab.id?"#4F46E5":"#6B7280",
+              borderBottom:activeTab===tab.id?"2px solid #6366F1":"2px solid transparent",
+              marginBottom:-1,fontFamily:"Inter,sans-serif",display:"flex",alignItems:"center",gap:6,
+              transition:"color .15s"}}>
+            {tab.label}
+            {tab.count > 0 && (
+              <span style={{background:activeTab===tab.id?"#EEF2FF":"#F3F4F6",
+                color:activeTab===tab.id?"#6366F1":"#9CA3AF",
+                fontSize:10,fontWeight:700,padding:"1px 6px",borderRadius:10}}>
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Connected Accounts tab */}
+      {activeTab === "accounts" && (
+        <div>
+          <p style={{fontSize:12,color:"#9CA3AF",marginBottom:14}}>
+            Connect your social accounts to enable scheduling and publishing.
+            Priority order: Instagram → Facebook → LinkedIn → YouTube → TikTok.
+          </p>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {Object.values(SOCIAL_PLATFORMS).map(platform=>{
+              const account = accounts.find(
+                a => a.platform === platform.id && a.is_connected
+              );
+              const isConnected = !!account;
+
+              return(
+                <div key={platform.id} className="account-card">
+                  {/* Platform icon */}
+                  <div className="account-icon"
+                    style={{background:platform.bg,border:`1px solid ${platform.border}`}}>
+                    <span style={{fontSize:20}}>{platform.emoji}</span>
+                  </div>
+
+                  {/* Platform info */}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
+                      <p style={{fontSize:14,fontWeight:600,color:"#111827"}}>{platform.label}</p>
+                      {isConnected ? (
+                        <span style={{display:"flex",alignItems:"center",gap:3,
+                          fontSize:10,fontWeight:600,color:"#10B981",
+                          background:"#ECFDF5",padding:"2px 7px",borderRadius:20,
+                          border:"1px solid #A7F3D0"}}>
+                          <Wifi style={{width:9,height:9}}/>Connected
+                        </span>
+                      ) : (
+                        <span style={{display:"flex",alignItems:"center",gap:3,
+                          fontSize:10,fontWeight:600,color:"#9CA3AF",
+                          background:"#F3F4F6",padding:"2px 7px",borderRadius:20}}>
+                          <WifiOff style={{width:9,height:9}}/>Not connected
+                        </span>
+                      )}
+                    </div>
+                    {isConnected ? (
+                      <p style={{fontSize:12,color:"#6B7280"}}>
+                        {account.account_name || account.account_id || "Connected account"}
+                        {account.expires_at && (
+                          <span style={{color:"#9CA3AF",marginLeft:8,fontSize:11}}>
+                            · Token expires {new Date(account.expires_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </p>
+                    ) : (
+                      <p style={{fontSize:11,color:"#9CA3AF",lineHeight:1.5}}>
+                        {platform.authNote}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    {isConnected ? (
+                      <>
+                        <button
+                          onClick={()=>disconnectAccount(account.id)}
+                          style={{display:"flex",alignItems:"center",gap:4,
+                            padding:"6px 12px",borderRadius:7,
+                            border:"1px solid #E5E7EB",background:"#fff",
+                            color:"#6B7280",fontSize:12,fontWeight:500,cursor:"pointer",
+                            fontFamily:"Inter,sans-serif",transition:"all .12s"}}
+                          onMouseEnter={e=>{e.currentTarget.style.borderColor="#EF4444";e.currentTarget.style.color="#EF4444";}}
+                          onMouseLeave={e=>{e.currentTarget.style.borderColor="#E5E7EB";e.currentTarget.style.color="#6B7280";}}>
+                          Disconnect
+                        </button>
+                        <button
+                          onClick={()=>handleConnectClick(platform.id)}
+                          style={{display:"flex",alignItems:"center",gap:4,
+                            padding:"6px 12px",borderRadius:7,
+                            border:"1px solid #E5E7EB",background:"#F9FAFB",
+                            color:"#374151",fontSize:12,fontWeight:500,cursor:"pointer",
+                            fontFamily:"Inter,sans-serif"}}>
+                          <RefreshCw style={{width:11,height:11}}/>Reconnect
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={()=>handleConnectClick(platform.id)}
+                        style={{display:"flex",alignItems:"center",gap:5,
+                          padding:"7px 16px",borderRadius:7,
+                          border:"1px solid",borderColor:platform.border,
+                          background:platform.bg,
+                          color:platform.textColor,
+                          fontSize:12,fontWeight:600,cursor:"pointer",
+                          fontFamily:"Inter,sans-serif",transition:"all .15s",
+                          whiteSpace:"nowrap"}}
+                        onMouseEnter={e=>e.currentTarget.style.opacity="0.85"}
+                        onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+                        <Plus style={{width:12,height:12}}/>Connect {platform.label}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Architecture note */}
+          <div style={{marginTop:24,background:"#F9FAFB",border:"1px solid #F3F4F6",
+            borderRadius:10,padding:"16px 18px"}}>
+            <p style={{fontSize:12,fontWeight:600,color:"#374151",marginBottom:8}}>
+              Integration roadmap
+            </p>
+            {[
+              {platform:"Instagram + Facebook",status:"next",note:"Meta Graph API — requires business account verification"},
+              {platform:"LinkedIn",status:"planned",note:"LinkedIn Marketing API — requires LinkedIn app approval"},
+              {platform:"YouTube",status:"planned",note:"YouTube Data API v3 — via Google OAuth"},
+              {platform:"TikTok",status:"later",note:"TikTok for Developers API — requires app review"},
+            ].map(item=>(
+              <div key={item.platform} style={{display:"flex",alignItems:"flex-start",
+                gap:10,padding:"8px 0",borderBottom:"1px solid #F3F4F6"}}>
+                <span style={{
+                  fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:20,
+                  flexShrink:0,marginTop:2,textTransform:"uppercase",letterSpacing:"0.05em",
+                  ...(item.status==="next"
+                    ? {background:"#EEF2FF",color:"#4F46E5",border:"1px solid #C7D2FE"}
+                    : item.status==="planned"
+                    ? {background:"#FFFBEB",color:"#92400E",border:"1px solid #FCD34D"}
+                    : {background:"#F3F4F6",color:"#9CA3AF",border:"1px solid #E5E7EB"}
+                  )
+                }}>{item.status}</span>
+                <div>
+                  <p style={{fontSize:12,fontWeight:600,color:"#374151"}}>{item.platform}</p>
+                  <p style={{fontSize:11,color:"#9CA3AF",marginTop:1}}>{item.note}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Publishing Records tab */}
+      {activeTab === "records" && (
+        <div>
+          {records.length > 0 ? (
+            <div className="card" style={{overflow:"hidden"}}>
+              <div style={{display:"grid",
+                gridTemplateColumns:"minmax(0,1fr) 90px 90px 90px 80px",
+                gap:8,padding:"8px 16px",borderBottom:"1px solid #F3F4F6"}}>
+                {["Post","Platform","Status","Scheduled","Published"].map(h=>(
+                  <p key={h} style={{fontSize:10,fontWeight:600,color:"#9CA3AF",
+                    textTransform:"uppercase",letterSpacing:"0.08em"}}>{h}</p>
+                ))}
+              </div>
+              {records.map(r=>{
+                const statusMeta = PUBLISH_STATUS_META[r.status] || PUBLISH_STATUS_META.draft;
+                const post = db.posts.find(p=>p.id===r.post_id);
+                const platform = SOCIAL_PLATFORMS[r.platform];
+                const StatusIcon = statusMeta.icon;
+                return(
+                  <div key={r.id} style={{display:"grid",
+                    gridTemplateColumns:"minmax(0,1fr) 90px 90px 90px 80px",
+                    gap:8,padding:"10px 16px",borderBottom:"1px solid #F9FAFB",
+                    alignItems:"center"}}>
+                    <p style={{fontSize:13,fontWeight:500,color:"#111827",
+                      whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                      {post?.title || "Unknown post"}
+                    </p>
+                    <div style={{display:"flex",alignItems:"center",gap:5}}>
+                      <span>{platform?.emoji}</span>
+                      <span style={{fontSize:11,color:"#6B7280"}}>{platform?.label||r.platform}</span>
+                    </div>
+                    <span style={{display:"inline-flex",alignItems:"center",gap:4,
+                      padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,
+                      background:statusMeta.bg,color:statusMeta.color}}>
+                      <StatusIcon style={{width:9,height:9}}/>{statusMeta.label}
+                    </span>
+                    <span style={{fontSize:11,color:"#9CA3AF"}}>
+                      {r.scheduled_at
+                        ? new Date(r.scheduled_at).toLocaleDateString("en-US",{month:"short",day:"numeric"})
+                        : "—"}
+                    </span>
+                    <span style={{fontSize:11,color:"#9CA3AF"}}>
+                      {r.published_at
+                        ? new Date(r.published_at).toLocaleDateString("en-US",{month:"short",day:"numeric"})
+                        : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyMsg icon="📡" text="No publishing records yet. Connect accounts and start scheduling posts."/>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function ActivityView(){
   const{db}=useApp();
   const dotCls={success:"dot-approved",warning:"dot-scheduled",info:"dot-posted",error:"dot-draft"};
@@ -1146,7 +1641,7 @@ function QuickAddBar(){
   async function submit(){
     if(!title.trim()||saving)return;
     setSaving(true);
-    await addPost({title:title.trim(),date,platform,status:"Draft",caption:"",notes:"",video_link:"",feedback:""});
+    await addPost({title:title.trim(),date,platform,status:"Draft",caption:"",notes:"",video_link:"",feedback:"",checklist:DEFAULT_CHECKLIST.map(i=>({...i}))});
     setSaving(false);setQA(false);
   }
   const inp={background:"#fff",border:"1px solid #E5E7EB",borderRadius:7,padding:"6px 10px",fontSize:13,color:"#111827",fontFamily:"Inter,sans-serif",outline:"none"};
@@ -1176,10 +1671,18 @@ function EditPanel(){
     platform:post.platform||"Instagram",status:post.status||"Draft",
     notes:post.notes||"",video_link:post.video_link||"",
     caption:post.caption||"",feedback:post.feedback||"",
+    checklist: Array.isArray(post.checklist) && post.checklist.length > 0
+      ? post.checklist
+      : DEFAULT_CHECKLIST.map(i=>({...i})),
   });
   const[saveState,setSaveState]=useState("idle");
   const timer=useRef(null);
   const isFirst=useRef(true);
+
+  // Sync form.status if the post is updated externally (e.g. drag-and-drop while panel is open)
+  useEffect(()=>{
+    setForm(f=>f.status!==post.status ? {...f,status:post.status} : f);
+  },[post.status]);
 
   useEffect(()=>{
     if(isFirst.current){isFirst.current=false;return;}
@@ -1228,38 +1731,95 @@ function EditPanel(){
           <Zap style={{width:9,height:9,color:"#8B5CF6"}}/>
           <p style={{fontSize:10,color:"#7C3AED",fontWeight:500}}>Auto-saves 1.5s after you stop typing</p>
         </div>
-        <div style={{flex:1,overflowY:"auto",padding:"18px 16px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"22px 20px"}}>
+
+          {/* ── Title — large, underline on focus ── */}
           <input value={form.title} onChange={sf("title")} placeholder="Post title"
-            style={{...inp,fontSize:18,fontWeight:700,marginBottom:18,letterSpacing:"-0.2px"}} {...foc}/>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-            <FieldRow label="Date"><input type="date" value={form.date} onChange={sf("date")} style={inp} {...foc}/></FieldRow>
+            style={{...inp,width:"100%",fontSize:18,fontWeight:700,marginBottom:22,
+              letterSpacing:"-0.3px",border:"none",borderBottom:"2px solid #F3F4F6",
+              borderRadius:0,padding:"0 0 10px 0",boxShadow:"none"}}
+            onFocus={e=>{e.target.style.borderBottomColor="#6366F1";}}
+            onBlur={e=>{e.target.style.borderBottomColor="#F3F4F6";}}/>
+
+          {/* ── Date + Platform ── */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:18}}>
+            <FieldRow label="Date">
+              <input type="date" value={form.date} onChange={sf("date")} style={inp} {...foc}/>
+            </FieldRow>
             <FieldRow label="Platform">
               <select value={form.platform} onChange={sf("platform")} style={inp} {...foc}>
                 {PLATFORMS.map(p=><option key={p} value={p}>{PLATFORM_META[p]?.emoji} {p}</option>)}
               </select>
             </FieldRow>
           </div>
-          <FieldRow label="Status" style={{marginBottom:14}}>
-            <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:4}}>
-              {STATUSES.map(s=>{
-                const sm=STATUS_META[s],active=form.status===s;
-                return(
+
+          {/* ── Status ── */}
+          <FieldRow label="Status" style={{marginBottom:22}}>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
+              {STATUS_ORDER.map((s,i) => {
+                const sm = STATUS_META[s] || STATUS_META.Draft;
+                const isActive = form.status === s;
+                const isDone   = STATUS_ORDER.indexOf(form.status) > i;
+                return (
                   <button key={s} onClick={()=>handleStatus(s)}
-                    style={{display:"flex",alignItems:"center",gap:4,padding:"4px 12px",borderRadius:20,border:"1.5px solid",borderColor:active?"#6366F1":"#E5E7EB",background:active?"#EEF2FF":"#fff",color:active?"#6366F1":"#6B7280",fontSize:12,fontWeight:600,cursor:"pointer",transition:"all 0.12s",boxShadow:active?"0 0 0 3px rgba(99,102,241,.1)":"none"}}>
-                    <span className={sm.dot} style={{width:5,height:5,borderRadius:"50%"}}/>{s}
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",
+                      borderRadius:20,border:"1.5px solid",
+                      borderColor: isActive ? "#6366F1" : isDone ? "#86EFAC" : "#E5E7EB",
+                      background:  isActive ? "#EEF2FF" : isDone ? "#F0FDF4" : "#fff",
+                      color:       isActive ? "#4F46E5" : isDone ? "#16A34A" : "#9CA3AF",
+                      fontSize:12,fontWeight:600,cursor:"pointer",transition:"all .15s",
+                      boxShadow: isActive ? "0 0 0 3px rgba(99,102,241,.1)" : "none",
+                      fontFamily:"Inter,sans-serif"}}>
+                    <span className={sm.dot} style={{width:5,height:5,borderRadius:"50%",flexShrink:0}}/>
+                    {s}
+                    {isDone && <span style={{fontSize:9,marginLeft:1}}>✓</span>}
                   </button>
                 );
               })}
             </div>
           </FieldRow>
-          <div style={{height:1,background:"#F3F4F6",margin:"2px 0 16px"}}/>
-          <FieldRow label="Notes" style={{marginBottom:12}}><textarea value={form.notes} onChange={sf("notes")} placeholder="Production notes, direction, context..." rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
-          <FieldRow label="Video Link" style={{marginBottom:12}}><input value={form.video_link} onChange={sf("video_link")} placeholder="https://drive.google.com/..." style={inp} {...foc}/></FieldRow>
-          <FieldRow label="Caption for Approval" style={{marginBottom:12}}><textarea value={form.caption} onChange={sf("caption")} placeholder="Full caption copy for client review..." rows={5} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
-          <FieldRow label="Feedback / Revisions" style={{marginBottom:12}}><textarea value={form.feedback} onChange={sf("feedback")} placeholder="Client feedback or revision notes..." rows={3} style={{...inp,resize:"none",lineHeight:1.6}} {...foc}/></FieldRow>
+
+          {/* ── Divider ── */}
+          <div style={{height:1,background:"#F3F4F6",margin:"0 0 22px"}}/>
+
+          {/* ── Caption — most important content field, goes first ── */}
+          <FieldRow label="Caption" style={{marginBottom:18}}>
+            <textarea value={form.caption} onChange={sf("caption")}
+              placeholder="Write the caption for this post..." rows={5}
+              style={{...inp,resize:"none",lineHeight:1.75}} {...foc}/>
+          </FieldRow>
+
+          {/* ── Notes ── */}
+          <FieldRow label="Notes" style={{marginBottom:18}}>
+            <textarea value={form.notes} onChange={sf("notes")}
+              placeholder="Creative direction, production notes, context..." rows={3}
+              style={{...inp,resize:"none",lineHeight:1.75}} {...foc}/>
+          </FieldRow>
+
+          {/* ── Attached media ── */}
+          <FieldRow label="Attached media" style={{marginBottom:18}}>
+            <MediaAttachment
+              value={form.video_link}
+              onChange={url=>setForm(f=>({...f,video_link:url}))}
+            />
+          </FieldRow>
+
+          {/* ── Feedback ── */}
+          <FieldRow label="Feedback" style={{marginBottom:22}}>
+            <textarea value={form.feedback} onChange={sf("feedback")}
+              placeholder="Client feedback or revision notes..." rows={3}
+              style={{...inp,resize:"none",lineHeight:1.75}} {...foc}/>
+          </FieldRow>
+
+          {/* ── Divider ── */}
+          <div style={{height:1,background:"#F3F4F6",margin:"0 0 20px"}}/>
+
+          {/* ── Publish targets ── */}
+          <PublishTargets post={post}/>
+
         </div>
-        <div style={{padding:"10px 16px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",justifyContent:"flex-end"}}>
-          <button onClick={()=>setEdit(null)} className="btn-primary" style={{fontSize:12,padding:"6px 16px"}}>Done</button>
+        <div style={{padding:"12px 20px",borderTop:"1px solid #F3F4F6",flexShrink:0,display:"flex",justifyContent:"flex-end"}}>
+          <button onClick={()=>setEdit(null)} className="btn-primary" style={{fontSize:12,padding:"7px 20px"}}>Done</button>
         </div>
       </div>
     </>
@@ -1329,6 +1889,400 @@ function CommandPalette(){
     </div>
   );
 }
+
+// ─── PublishTargets ───────────────────────────────────────────────────────────
+// Shows in the EditPanel — lets the user see per-platform publish status
+// and toggle which platforms this post is targeted for.
+
+function PublishTargets({ post }){
+  const{db,setErr}=useApp();
+  const records = (db.publishing_records||[]).filter(r=>r.post_id===post.id);
+  const connectedAccounts = db.connected_accounts||[];
+
+  function handlePublishClick(platformId){
+    const platform = SOCIAL_PLATFORMS[platformId];
+    setErr(
+      `Publishing to ${platform.label} coming soon. ` +
+      "Activate publishing by connecting a ${platform.label} account in the Publishing tab."
+    );
+  }
+
+  return(
+    <div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+        <p style={{fontSize:11,fontWeight:600,color:"#6B7280",textTransform:"uppercase",letterSpacing:"0.08em"}}>
+          Publish to
+        </p>
+        <a href="#" onClick={e=>{e.preventDefault();}}
+          style={{fontSize:11,color:"#6366F1",textDecoration:"none",fontWeight:500}}>
+          Manage accounts →
+        </a>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {Object.values(SOCIAL_PLATFORMS).map(platform=>{
+          const record = records.find(r=>r.platform===platform.id);
+          const account = connectedAccounts.find(a=>a.platform===platform.id&&a.is_connected);
+          const statusMeta = record ? (PUBLISH_STATUS_META[record.status]||PUBLISH_STATUS_META.draft) : null;
+          const StatusIcon = statusMeta?.icon;
+
+          return(
+            <div key={platform.id} style={{display:"flex",alignItems:"center",gap:10,
+              padding:"8px 10px",borderRadius:8,background:"#FAFAFA",border:"1px solid #F3F4F6"}}>
+              {/* Platform */}
+              <span style={{fontSize:15,flexShrink:0}}>{platform.emoji}</span>
+              <span style={{fontSize:12,fontWeight:500,color:"#374151",flex:1,minWidth:0}}>
+                {platform.label}
+              </span>
+
+              {/* Status or connect prompt */}
+              {record ? (
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  {record.external_post_url ? (
+                    <a href={record.external_post_url} target="_blank" rel="noreferrer"
+                      style={{display:"flex",alignItems:"center",gap:3,
+                        fontSize:10,color:"#6366F1",textDecoration:"none",fontWeight:600}}>
+                      <ExternalLink style={{width:9,height:9}}/>View
+                    </a>
+                  ) : null}
+                  <span style={{display:"inline-flex",alignItems:"center",gap:3,
+                    padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:600,
+                    background:statusMeta.bg,color:statusMeta.color}}>
+                    {StatusIcon&&<StatusIcon style={{width:8,height:8}}/>}
+                    {statusMeta.label}
+                  </span>
+                </div>
+              ) : account ? (
+                <button onClick={()=>handlePublishClick(platform.id)}
+                  style={{display:"flex",alignItems:"center",gap:4,
+                    padding:"4px 10px",borderRadius:6,
+                    border:"1px solid",borderColor:platform.border,
+                    background:platform.bg,color:platform.textColor,
+                    fontSize:11,fontWeight:600,cursor:"pointer",
+                    fontFamily:"Inter,sans-serif",transition:"all .12s",whiteSpace:"nowrap"}}>
+                  <Send style={{width:9,height:9}}/>Publish
+                </button>
+              ) : (
+                <span style={{fontSize:10,color:"#D1D5DB",fontStyle:"italic"}}>
+                  Not connected
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+// ─── Media Attachment Component ───────────────────────────────────────────────
+// Detects media type, shows preview card, one-click open/copy/remove.
+// Keeps the existing video_link data model — just upgrades the UX.
+
+function detectMediaType(url) {
+  if (!url) return null;
+  const u = url.toLowerCase();
+  if (u.includes("youtube.com") || u.includes("youtu.be"))          return "youtube";
+  if (u.includes("drive.google.com"))                                return "gdrive";
+  if (u.includes("loom.com"))                                        return "loom";
+  // Extension-based image detection
+  if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|#|$)/.test(u))       return "image";
+  // Common image CDN patterns (Cloudinary, S3, Imgur, Unsplash, etc.)
+  if (u.includes("res.cloudinary.com"))                              return "image";
+  if (u.includes("images.unsplash.com"))                             return "image";
+  if (u.includes("imgur.com"))                                       return "image";
+  if (u.includes("i.imgur.com"))                                     return "image";
+  if (/s3\.amazonaws\.com.*\.(jpg|jpeg|png|gif|webp)/.test(u))    return "image";
+  // Video files
+  if (/\.(mp4|mov|avi|webm|mkv)(\?|#|$)/.test(u))                 return "video";
+  // Docs
+  if (/\.(pdf|doc|docx|ppt|pptx)(\?|#|$)/.test(u))               return "doc";
+  return "link";
+}
+
+function getMediaMeta(url) {
+  const type = detectMediaType(url);
+  const meta = {
+    youtube:  { label:"YouTube video",      icon:Play,      color:"#EF4444", bg:"#FEF2F2",   canPreview:true  },
+    gdrive:   { label:"Google Drive file",  icon:BookOpen,  color:"#1A73E8", bg:"#EFF6FF",   canPreview:false },
+    loom:     { label:"Loom recording",     icon:Film,      color:"#8B5CF6", bg:"#F5F3FF",   canPreview:false },
+    image:    { label:"Image",              icon:Image,     color:"#10B981", bg:"#ECFDF5",   canPreview:true  },
+    video:    { label:"Video file",         icon:Film,      color:"#F97316", bg:"#FFF7ED",   canPreview:false },
+    doc:      { label:"Document",           icon:FileText,  color:"#6366F1", bg:"#EEF2FF",   canPreview:false },
+    link:     { label:"Asset link",         icon:Link,      color:"#6B7280", bg:"#F3F4F6",   canPreview:false },
+  };
+  return type ? meta[type] : null;
+}
+
+function getYouTubeThumbnail(url) {
+  // Extract video id from various YouTube URL formats
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg` : null;
+}
+
+function getDomain(url) {
+  try { return new URL(url).hostname.replace("www.", ""); }
+  catch { return ""; }
+}
+
+function MediaAttachment({ value, onChange }) {
+  const [inputVal, setInputVal]     = useState(value || "");
+  const [showInput, setShowInput]   = useState(!value);
+  const [copied, setCopied]         = useState(false);
+  const [imgError, setImgError]     = useState(false);
+  const [urlError, setUrlError]     = useState(false);  // shows inline error on bad paste
+  const inputRef = useRef(null);
+
+  // Keep in sync if external value changes (e.g. loading a post)
+  useEffect(() => {
+    setInputVal(value || "");
+    setShowInput(!value);
+    setImgError(false);
+    setUrlError(false);
+  }, [value]);
+
+  const type = detectMediaType(value);
+  const meta = getMediaMeta(value);
+  const validUrl = normUrl(value);
+
+  function handlePaste(e) {
+    // Auto-submit on paste — most common workflow
+    const pasted = e.clipboardData?.getData("text") || "";
+    const cleaned = normUrl(pasted.trim());
+    if (cleaned) {
+      setUrlError(false);
+      setInputVal(cleaned);
+      onChange(cleaned);
+      setShowInput(false);
+    }
+  }
+
+  function handleInputChange(e) {
+  function handleInputChange(e) {
+    setUrlError(false);
+    setInputVal(e.target.value);
+  }
+
+  function handleInputBlur() {
+    const cleaned = normUrl(inputVal.trim());
+    if (cleaned) {
+      setUrlError(false);
+      onChange(cleaned);
+      setShowInput(false);
+    } else if (!inputVal.trim()) {
+      // Empty — hide input and show existing card or empty state
+      setUrlError(false);
+      setShowInput(false);
+    } else {
+      // User typed something invalid — show error, don't silently revert
+      setUrlError(true);
+    }
+  }
+
+  function handleInputKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleInputBlur();
+    }
+    if (e.key === "Escape") {
+      setUrlError(false);
+      setShowInput(false);
+      setInputVal(value || "");
+    }
+  }
+
+  function handleCopy() {
+    if (!validUrl) return;
+    navigator.clipboard.writeText(validUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  }
+
+  function handleRemove() {
+    onChange("");
+    setInputVal("");
+    setShowInput(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  // ── Empty state ──────────────────────────────────────────────────────────
+  if (!value && !showInput) {
+    return (
+      <div className="media-empty" onClick={() => { setShowInput(true); setTimeout(() => inputRef.current?.focus(), 50); }}>
+        <div style={{width:32,height:32,borderRadius:8,background:"#F3F4F6",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}>
+          <Link style={{width:14,height:14,color:"#9CA3AF"}}/>
+        </div>
+        <p style={{fontSize:12,fontWeight:600,color:"#6B7280",marginBottom:3}}>Attach media or asset</p>
+        <p style={{fontSize:11,color:"#9CA3AF"}}>YouTube, Google Drive, image URL, video file</p>
+      </div>
+    );
+  }
+
+  // ── Input state ──────────────────────────────────────────────────────────
+  if (showInput || !value) {
+    return (
+      <div>
+        <input
+          ref={inputRef}
+          value={inputVal}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
+          onPaste={handlePaste}
+          placeholder="Paste a YouTube, Drive, image, or asset link..."
+          style={{width:"100%",background:"#fff",
+            border: urlError ? "1.5px solid #EF4444" : "1.5px solid #6366F1",
+            borderRadius:8,padding:"9px 12px",fontSize:13,color:"#111827",
+            fontFamily:"Inter,sans-serif",outline:"none",
+            boxShadow: urlError
+              ? "0 0 0 3px rgba(239,68,68,.1)"
+              : "0 0 0 3px rgba(99,102,241,.1)"}}
+          autoFocus
+        />
+        {urlError && (
+          <p style={{fontSize:11,color:"#EF4444",marginTop:5}}>
+            That doesn't look like a valid URL. Try pasting the full link.
+          </p>
+        )}
+        {!urlError && (
+          <div style={{display:"flex",gap:14,marginTop:7,padding:"0 1px"}}>
+            {["▶ YouTube","📁 Drive","🖼 Image","🔗 Link"].map(ex=>(
+              <span key={ex} style={{fontSize:10,color:"#9CA3AF"}}>{ex}</span>
+            ))}
+          </div>
+        )}
+        {value && !urlError && (
+          <button onClick={() => { setShowInput(false); setInputVal(value); setUrlError(false); }}
+            className="btn-ghost" style={{marginTop:5,fontSize:11,color:"#9CA3AF"}}>
+            Cancel
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // ── Attachment card state ────────────────────────────────────────────────
+  const ytThumb = type === "youtube" ? getYouTubeThumbnail(value) : null;
+  const domain  = getDomain(value);
+  const isImageType = (type === "image" || type === "youtube");
+
+  return (
+    <div className="media-card">
+
+      {/* ── Visual preview ── */}
+      {type === "youtube" && ytThumb && !imgError ? (
+        // YouTube: thumbnail with play button overlay
+        <div style={{position:"relative",borderRadius:"10px 10px 0 0",overflow:"hidden",lineHeight:0}}>
+          <img src={ytThumb} alt="YouTube thumbnail"
+            onError={() => setImgError(true)}
+            style={{width:"100%",display:"block",objectFit:"cover",maxHeight:180}}/>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",
+            justifyContent:"center",background:"rgba(0,0,0,.22)"}}>
+            <div style={{width:40,height:40,borderRadius:"50%",
+              background:"rgba(255,255,255,.92)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              boxShadow:"0 2px 12px rgba(0,0,0,.18)"}}>
+              <Play style={{width:15,height:15,color:"#EF4444",marginLeft:2}}/>
+            </div>
+          </div>
+        </div>
+      ) : type === "image" && !imgError ? (
+        // Image: natural height, no cropping, rounded top corners
+        <div style={{borderRadius:"10px 10px 0 0",overflow:"hidden",
+          background:"#F9FAFB",lineHeight:0,
+          borderBottom:"1px solid #F3F4F6"}}>
+          <img
+            src={value}
+            alt="Attached image"
+            onError={() => setImgError(true)}
+            style={{
+              width:"100%",
+              maxHeight:260,
+              objectFit:"contain",  // no cropping — show full image
+              display:"block",
+              background:"#F9FAFB",
+            }}
+          />
+        </div>
+      ) : (
+        // Non-image: compact icon card
+        <div style={{display:"flex",alignItems:"center",gap:12,
+          padding:"14px 14px",borderBottom:"1px solid #F3F4F6"}}>
+          <div style={{width:38,height:38,borderRadius:9,
+            background:meta?.bg||"#F3F4F6",flexShrink:0,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {meta && React.createElement(meta.icon,{style:{width:18,height:18,color:meta.color}})}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <p style={{fontSize:13,fontWeight:600,color:"#111827",
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {meta?.label || "Attached file"}
+            </p>
+            <p style={{fontSize:11,color:"#9CA3AF",marginTop:2,
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {domain || value.slice(0,48)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Info row (for image/youtube — non-image has it inline above) ── */}
+      {isImageType && !imgError && (
+        <div style={{padding:"9px 12px",borderBottom:"1px solid #F3F4F6"}}>
+          <p style={{fontSize:11,fontWeight:600,color:"#374151",
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {meta?.label || "Image"}
+          </p>
+          <p style={{fontSize:10,color:"#9CA3AF",marginTop:1,
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {domain || value.slice(0,48)}
+          </p>
+        </div>
+      )}
+
+      {/* ── Fallback info when image fails to load ── */}
+      {imgError && (
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",
+          borderBottom:"1px solid #F3F4F6"}}>
+          <div style={{width:36,height:36,borderRadius:8,background:"#FEF2F2",
+            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <AlertCircle style={{width:16,height:16,color:"#EF4444"}}/>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <p style={{fontSize:12,fontWeight:600,color:"#374151"}}>Preview unavailable</p>
+            <p style={{fontSize:10,color:"#9CA3AF",marginTop:2,
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {domain || value.slice(0,48)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Action buttons ── */}
+      <div className="media-card-actions">
+        <a href={validUrl} target="_blank" rel="noreferrer" className="media-btn primary"
+          style={{textDecoration:"none"}}>
+          <ExternalLink style={{width:10,height:10}}/>Open
+        </a>
+        <div style={{position:"relative"}}>
+          {copied && <div className="copy-confirm">Copied!</div>}
+          <button onClick={handleCopy} className="media-btn">
+            <Copy style={{width:10,height:10}}/>Copy link
+          </button>
+        </div>
+        <button onClick={() => setShowInput(true)} className="media-btn" style={{marginLeft:"auto"}}>
+          <Pencil style={{width:10,height:10}}/>Edit
+        </button>
+        <button onClick={handleRemove} className="media-btn danger">
+          <X style={{width:10,height:10}}/>Remove
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 function StatusTag({status,small}){
   const sm=STATUS_META[status]||STATUS_META.Draft;
