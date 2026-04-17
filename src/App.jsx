@@ -234,8 +234,8 @@ const SOCIAL_PLATFORMS = {
     supportsVideo: true,
     requiresPage: true,
     authNote: "Connect your Facebook Page (not personal profile)",
-    canPublish: false,
-    publishNote: "Facebook publishing requires Meta Graph API setup",
+    canPublish: true,
+    publishNote: "Facebook publishing via Meta Graph API",
   },
   linkedin: {
     id: "linkedin",
@@ -1360,6 +1360,23 @@ function PublishingView(){
       }
       return;
     }
+    // Facebook uses the same Meta OAuth as Instagram
+    if(platformId === "facebook"){
+      try{
+        const res = await fetch(
+          "https://ilezaspkmjyxwxfacebw.supabase.co/functions/v1/meta-auth/login?platform=facebook"
+        );
+        const data = await res.json();
+        if(data.url){
+          window.location.href = data.url;
+        } else {
+          setErr("Could not start Facebook login. Please try again.");
+        }
+      }catch(e){
+        setErr("Could not connect to Facebook. Check your internet connection.");
+      }
+      return;
+    }
     // Other platforms coming soon
     const platform = SOCIAL_PLATFORMS[platformId];
     setErr(
@@ -2051,6 +2068,22 @@ function PublishTargets({ post }){
 // Detects media type, shows preview card, one-click open/copy/remove.
 // Keeps the existing video_link data model — just upgrades the UX.
 
+// Extract Google Drive file ID from any Drive URL format
+function getDriveFileId(url) {
+  if (!url) return null;
+  const m1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (m1) return m1[1];
+  const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m2) return m2[1];
+  return null;
+}
+
+// Convert any Google Drive share URL to a direct download URL
+function driveToDirectUrl(url) {
+  const id = getDriveFileId(url);
+  return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
+}
+
 function detectMediaType(url) {
   if (!url) return null;
   const u = url.toLowerCase();
@@ -2185,7 +2218,7 @@ function MediaAttachment({ value, onChange }) {
           <Link style={{width:14,height:14,color:"#9CA3AF"}}/>
         </div>
         <p style={{fontSize:12,fontWeight:600,color:"#6B7280",marginBottom:3}}>Attach media or asset</p>
-        <p style={{fontSize:11,color:"#9CA3AF"}}>YouTube, Google Drive, image URL, video file</p>
+        <p style={{fontSize:11,color:"#9CA3AF"}}>Google Drive, image URL, video URL (.mp4)</p>
       </div>
     );
   }
@@ -2294,6 +2327,12 @@ function MediaAttachment({ value, onChange }) {
               whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
               {domain || value.slice(0,48)}
             </p>
+            {type === "gdrive" && (
+              <p style={{fontSize:10,color:"#F59E0B",marginTop:4,
+                display:"flex",alignItems:"center",gap:3}}>
+                ⚠️ Set file to "Anyone with the link" in Drive for publishing to work
+              </p>
+            )}
           </div>
         </div>
       )}
